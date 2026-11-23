@@ -1,0 +1,1588 @@
+{
+ "resourceLogs": [
+  {
+   "resource": {
+    "attributes": [
+     {
+      "key": "engineer.handle",
+      "value": {
+       "stringValue": "eng"
+      }
+     },
+     {
+      "key": "os.type",
+      "value": {
+       "stringValue": "darwin"
+      }
+     },
+     {
+      "key": "os.version",
+      "value": {
+       "stringValue": "27.0.0"
+      }
+     },
+     {
+      "key": "service.name",
+      "value": {
+       "stringValue": "claude-code"
+      }
+     },
+     {
+      "key": "service.version",
+      "value": {
+       "stringValue": "2.1.322"
+      }
+     }
+    ],
+    "droppedAttributesCount": 0
+   },
+   "scopeLogs": [
+    {
+     "logRecords": [
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "tool_decision"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:18.809Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 20
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "decision",
+         "value": {
+          "stringValue": "accept"
+         }
+        },
+        {
+         "key": "source",
+         "value": {
+          "stringValue": "config"
+         }
+        },
+        {
+         "key": "tool_name",
+         "value": {
+          "stringValue": "Bash"
+         }
+        },
+        {
+         "key": "tool_use_id",
+         "value": {
+          "stringValue": "toolu_016UJCMwdjDSb2ysdcgccxes"
+         }
+        },
+        {
+         "key": "tool_source",
+         "value": {
+          "stringValue": "builtin"
+         }
+        },
+        {
+         "key": "permission_mode",
+         "value": {
+          "stringValue": "default"
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZLuPjyT3MaccUF3SFx"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.tool_decision"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510438809000000",
+       "spanId": "176d34a513bda324",
+       "timeUnixNano": "1794510438809000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "api_request"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:18.812Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 21
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "model",
+         "value": {
+          "stringValue": "claude-sonnet-5-5"
+         }
+        },
+        {
+         "key": "input_tokens",
+         "value": {
+          "intValue": 2
+         }
+        },
+        {
+         "key": "output_tokens",
+         "value": {
+          "intValue": 52
+         }
+        },
+        {
+         "key": "cache_read_tokens",
+         "value": {
+          "intValue": 65658
+         }
+        },
+        {
+         "key": "cache_creation_tokens",
+         "value": {
+          "intValue": 508
+         }
+        },
+        {
+         "key": "cache_creation_5m_tokens",
+         "value": {
+          "intValue": 0
+         }
+        },
+        {
+         "key": "cache_creation_1h_tokens",
+         "value": {
+          "intValue": 508
+         }
+        },
+        {
+         "key": "cost_usd",
+         "value": {
+          "doubleValue": 0.0091218
+         }
+        },
+        {
+         "key": "cost_usd_micros",
+         "value": {
+          "intValue": 9122
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "intValue": 1625
+         }
+        },
+        {
+         "key": "ttft_ms",
+         "value": {
+          "intValue": 1456
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZLuPjyT3MaccUF3SFx"
+         }
+        },
+        {
+         "key": "speed",
+         "value": {
+          "stringValue": "normal"
+         }
+        },
+        {
+         "key": "query_source",
+         "value": {
+          "stringValue": "sdk"
+         }
+        },
+        {
+         "key": "effort",
+         "value": {
+          "stringValue": "medium"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.api_request"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510438812000000",
+       "spanId": "e8d0603d078afc6b",
+       "timeUnixNano": "1794510438812000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "tool_result"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:18.836Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 22
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "tool_name",
+         "value": {
+          "stringValue": "Bash"
+         }
+        },
+        {
+         "key": "tool_use_id",
+         "value": {
+          "stringValue": "toolu_016UJCMwdjDSb2ysdcgccxes"
+         }
+        },
+        {
+         "key": "success",
+         "value": {
+          "stringValue": "true"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "27"
+         }
+        },
+        {
+         "key": "tool_input_size_bytes",
+         "value": {
+          "stringValue": "26"
+         }
+        },
+        {
+         "key": "tool_result_size_bytes",
+         "value": {
+          "stringValue": "46"
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZLuPjyT3MaccUF3SFx"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.tool_result"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510438836000000",
+       "spanId": "e8d0603d078afc6b",
+       "timeUnixNano": "1794510438836000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "tool_decision"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:20.496Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 23
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "decision",
+         "value": {
+          "stringValue": "reject"
+         }
+        },
+        {
+         "key": "source",
+         "value": {
+          "stringValue": "config"
+         }
+        },
+        {
+         "key": "tool_name",
+         "value": {
+          "stringValue": "Bash"
+         }
+        },
+        {
+         "key": "tool_use_id",
+         "value": {
+          "stringValue": "toolu_01G4VRtkHT9TNzzvHZ79DBtV"
+         }
+        },
+        {
+         "key": "tool_source",
+         "value": {
+          "stringValue": "builtin"
+         }
+        },
+        {
+         "key": "permission_mode",
+         "value": {
+          "stringValue": "default"
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZM2YbzjRgiqkZvhQ9X"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.tool_decision"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510440496000000",
+       "spanId": "dd66b428e0c02916",
+       "timeUnixNano": "1794510440496000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "api_request"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:20.498Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 24
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "model",
+         "value": {
+          "stringValue": "claude-sonnet-5-5"
+         }
+        },
+        {
+         "key": "input_tokens",
+         "value": {
+          "intValue": 2
+         }
+        },
+        {
+         "key": "output_tokens",
+         "value": {
+          "intValue": 57
+         }
+        },
+        {
+         "key": "cache_read_tokens",
+         "value": {
+          "intValue": 66166
+         }
+        },
+        {
+         "key": "cache_creation_tokens",
+         "value": {
+          "intValue": 81
+         }
+        },
+        {
+         "key": "cache_creation_5m_tokens",
+         "value": {
+          "intValue": 0
+         }
+        },
+        {
+         "key": "cache_creation_1h_tokens",
+         "value": {
+          "intValue": 81
+         }
+        },
+        {
+         "key": "cost_usd",
+         "value": {
+          "doubleValue": 0.0075146
+         }
+        },
+        {
+         "key": "cost_usd_micros",
+         "value": {
+          "intValue": 7515
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "intValue": 1650
+         }
+        },
+        {
+         "key": "ttft_ms",
+         "value": {
+          "intValue": 1439
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZM2YbzjRgiqkZvhQ9X"
+         }
+        },
+        {
+         "key": "speed",
+         "value": {
+          "stringValue": "normal"
+         }
+        },
+        {
+         "key": "query_source",
+         "value": {
+          "stringValue": "sdk"
+         }
+        },
+        {
+         "key": "effort",
+         "value": {
+          "stringValue": "medium"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.api_request"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510440498000000",
+       "spanId": "e8d0603d078afc6b",
+       "timeUnixNano": "1794510440498000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "api_request"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.004Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 25
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "model",
+         "value": {
+          "stringValue": "claude-sonnet-5-5"
+         }
+        },
+        {
+         "key": "input_tokens",
+         "value": {
+          "intValue": 2
+         }
+        },
+        {
+         "key": "output_tokens",
+         "value": {
+          "intValue": 102
+         }
+        },
+        {
+         "key": "cache_read_tokens",
+         "value": {
+          "intValue": 66247
+         }
+        },
+        {
+         "key": "cache_creation_tokens",
+         "value": {
+          "intValue": 348
+         }
+        },
+        {
+         "key": "cache_creation_5m_tokens",
+         "value": {
+          "intValue": 0
+         }
+        },
+        {
+         "key": "cache_creation_1h_tokens",
+         "value": {
+          "intValue": 348
+         }
+        },
+        {
+         "key": "cost_usd",
+         "value": {
+          "doubleValue": 0.009040700000000002
+         }
+        },
+        {
+         "key": "cost_usd_micros",
+         "value": {
+          "intValue": 9041
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "intValue": 2500
+         }
+        },
+        {
+         "key": "ttft_ms",
+         "value": {
+          "intValue": 2488
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZMBh2s5ZNfhkKJmosC"
+         }
+        },
+        {
+         "key": "speed",
+         "value": {
+          "stringValue": "normal"
+         }
+        },
+        {
+         "key": "query_source",
+         "value": {
+          "stringValue": "sdk"
+         }
+        },
+        {
+         "key": "effort",
+         "value": {
+          "stringValue": "medium"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.api_request"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510443004000000",
+       "spanId": "e8d0603d078afc6b",
+       "timeUnixNano": "1794510443004000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "assistant_response"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.005Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 26
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "response_length",
+         "value": {
+          "intValue": 251
+         }
+        },
+        {
+         "key": "request_id",
+         "value": {
+          "stringValue": "req_011CgyZMBh2s5ZNfhkKJmosC"
+         }
+        },
+        {
+         "key": "message.uuid",
+         "value": {
+          "stringValue": "505b19aa-19be-4698-b507-da9e35c632dd"
+         }
+        },
+        {
+         "key": "model",
+         "value": {
+          "stringValue": "claude-sonnet-5-5"
+         }
+        },
+        {
+         "key": "query_source",
+         "value": {
+          "stringValue": "sdk"
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.assistant_response"
+       },
+       "droppedAttributesCount": 0,
+       "flags": 1,
+       "observedTimeUnixNano": "1794510443005000000",
+       "spanId": "e8d0603d078afc6b",
+       "timeUnixNano": "1794510443005000000",
+       "traceId": "fd5584a1accc95fc1ffacb3b78ddbf41"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.038Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 27
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "http"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "user"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "9941"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443039000000",
+       "timeUnixNano": "1794510443039000000"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.039Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 28
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "http"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "user"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "10546"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443039000000",
+       "timeUnixNano": "1794510443039000000"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.040Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 29
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "http"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "user"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "10273"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443040000000",
+       "timeUnixNano": "1794510443040000000"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.041Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 30
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "claudeai-proxy"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "claudeai"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "10196"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443041000000",
+       "timeUnixNano": "1794510443041000000"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.041Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 31
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "claudeai-proxy"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "claudeai"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "10430"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443041000000",
+       "timeUnixNano": "1794510443041000000"
+      },
+      {
+       "attributes": [
+        {
+         "key": "engineer.handle",
+         "value": {
+          "stringValue": "eng"
+         }
+        },
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "0d7cc70e-85ed-48fb-886b-8f206db58614"
+         }
+        },
+        {
+         "key": "anthropic.provider",
+         "value": {
+          "stringValue": "firstParty"
+         }
+        },
+        {
+         "key": "anthropic.custom_base_url",
+         "value": {
+          "boolValue": true
+         }
+        },
+        {
+         "key": "anthropic.plan",
+         "value": {
+          "stringValue": "max"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "non-interactive"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "mcp_server_connection"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2026-11-12T19:07:23.261Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "intValue": 32
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "585c97c8-f3b4-44e0-809b-2a856ba05b62"
+         }
+        },
+        {
+         "key": "status",
+         "value": {
+          "stringValue": "disconnected"
+         }
+        },
+        {
+         "key": "transport_type",
+         "value": {
+          "stringValue": "stdio"
+         }
+        },
+        {
+         "key": "server_scope",
+         "value": {
+          "stringValue": "user"
+         }
+        },
+        {
+         "key": "duration_ms",
+         "value": {
+          "stringValue": "9538"
+         }
+        },
+        {
+         "key": "is_plugin",
+         "value": {
+          "boolValue": false
+         }
+        }
+       ],
+       "body": {
+        "stringValue": "claude_code.mcp_server_connection"
+       },
+       "droppedAttributesCount": 0,
+       "observedTimeUnixNano": "1794510443261000000",
+       "timeUnixNano": "1794510443261000000"
+      }
+     ],
+     "scope": {
+      "name": "com.anthropic.claude_code.events",
+      "version": "2.1.322"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,200 @@
+# Livy's OpenTelemetry Collector: receives Claude Code and Codex CLI telemetry over
+# OTLP/HTTP, removes identity and content, and hands the rest to ONE storage overlay:
+#
+#   otelcol-contrib --config=collector.yaml --config=pubsub.yaml   # Google Cloud (Pub/Sub, then Cloud Storage)
+#   otelcol-contrib --config=collector.yaml --config=s3.yaml       # Amazon S3
+#
+# Every signal (logs, metrics, traces) from every client is stored; what is removed is
+# identity and free text, never a signal or a client.
+#
+# Runs as the upstream image pinned in IMAGE; this file and the overlay are the only
+# things of ours in the running service. README.md says what is kept and what is not.
+#
+# Synchronous on purpose: no batch processor and no sending queue. A request is
+# answered only after storage (the S3 bucket, or Pub/Sub) accepted it, so a failed
+# write fails the request and the client's exporter retries. A queue would answer 200 first and lose
+# the data if the instance is stopped (Cloud Run and Fargate both stop instances).
+
+extensions:
+  # Every request needs `Authorization: Bearer <token>`. The token comes from the
+  # cloud's secret manager as an environment variable. Unset or empty, the
+  # extension refuses to start ("no bearer token provided"), so the endpoint is
+  # never open.
+  bearertokenauth/livy:
+    scheme: Bearer
+    token: ${env:LIVY_OTEL_TOKEN}
+  # For local runs and container health probes; not reachable through the
+  # cloud's load balancer or Cloud Run URL, which route to 8080 only.
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      # HTTP only: Claude Code's header helper does not work over gRPC, and both
+      # clouds front the container with HTTPS on this one port.
+      http:
+        endpoint: 0.0.0.0:8080
+        auth:
+          authenticator: bearertokenauth/livy
+
+processors:
+  memory_limiter:
+    # Fixed MiB for a 512 MiB instance: a percentage needs the container's total
+    # memory, which neither Cloud Run nor Fargate guarantees to expose.
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  # Identity: who the person is and which machine they used. A regex, so an
+  # identity attribute a client adds later under these namespaces goes too.
+  #   user.*          email, account uuid/id, the client's random user id, groups
+  #   enduser.*       the OpenTelemetry semantic-convention name for the same
+  #   host.*          machine name and id (Codex sends host.name)
+  #   process.*       OS user name, command line and executable path (SDK resource detectors)
+  #   organization.id the vendor account's organization
+  #   identity.source, workspace.host_paths, cwd (local folder paths, home folder included)
+  # propagate: a statement that cannot run fails the request (the client retries)
+  # rather than letting data through unredacted.
+  transform/drop-identity:
+    error_mode: propagate
+    log_statements:
+      - context: resource
+        statements: &identity
+          - delete_matching_keys(attributes, "^(user|enduser|host|process)\\.")
+          - delete_key(attributes, "organization.id")
+          - delete_key(attributes, "identity.source")
+          - delete_key(attributes, "workspace.host_paths")
+          - delete_key(attributes, "cwd")
+      - context: scope
+        statements: *identity
+      - context: log
+        statements: *identity
+    metric_statements:
+      - context: resource
+        statements: *identity
+      - context: scope
+        statements: *identity
+      - context: datapoint
+        statements: *identity
+      # Exemplars carry their own attributes ("filtered" from the data point's).
+      - context: exemplar
+        statements:
+          - delete_matching_keys(filtered_attributes, "^(user|enduser|host|process)\\.")
+          - delete_key(filtered_attributes, "organization.id")
+          - delete_key(filtered_attributes, "identity.source")
+          - delete_key(filtered_attributes, "workspace.host_paths")
+          - delete_key(filtered_attributes, "cwd")
+    trace_statements:
+      - context: resource
+        statements: *identity
+      - context: scope
+        statements: *identity
+      - context: span
+        statements: *identity
+      # Not reached: span link attributes. OTTL cannot edit them, and emptying the
+      # links fails every request. Claude Code's links carry only link.type.
+      - context: spanevent
+        statements: *identity
+
+  # Claude Code's log content. Each attribute is sent only when a content flag
+  # (OTEL_LOG_USER_PROMPTS, OTEL_LOG_ASSISTANT_RESPONSES, OTEL_LOG_TOOL_DETAILS,
+  # OTEL_LOG_RAW_API_BODIES) is on; Livy never turns one on, and this holds if a
+  # flag is turned on by hand. `error` is free text (the full tool or API error
+  # message) on every event that has it; error_type and error_code keep the category.
+  transform/drop-log-content:
+    error_mode: propagate
+    log_statements:
+      - context: log
+        statements:
+          - delete_key(attributes, "prompt")
+          - delete_key(attributes, "prompt_text")
+          - delete_key(attributes, "response")
+          - delete_key(attributes, "tool_parameters")
+          - delete_key(attributes, "tool_input")
+          - delete_key(attributes, "body")
+          - delete_key(attributes, "body_ref")
+          - delete_key(attributes, "system_prompt")
+          - delete_key(attributes, "error")
+
+  # Codex CLI puts free text on its log records whatever its config says: tool
+  # arguments (shell commands, patches), error messages, the account email. So
+  # every log record whose service is not "claude-code" keeps only this
+  # allowlist of attributes, and loses its body.
+  transform/codex-allowlist:
+    error_mode: propagate
+    log_statements:
+      - context: log
+        statements:
+          - 'keep_keys(attributes, ["event.name", "event.kind", "event.timestamp", "conversation.id", "app.version", "auth_mode", "originator", "terminal.type", "model", "slug", "duration_ms", "http.response.status_code", "attempt", "endpoint", "success", "input_token_count", "output_token_count", "cached_token_count", "cache_write_token_count", "reasoning_token_count", "tool_token_count", "ttft_ms", "service_tier", "model_reasoning_effort", "tool_name", "tool_namespace", "call_id", "tool_result_seq", "output_truncated", "decision", "source", "prompt_length", "provider_name", "reasoning_effort", "reasoning_summary", "context_window", "auto_compact_token_limit", "approval_policy", "sandbox_policy", "startup.phase", "startup.status", "turn.id", "usage.estimated_usd", "turn.interrupted", "speed"]) where resource.attributes["service.name"] != "claude-code"'
+          - set(body, "") where resource.attributes["service.name"] != "claude-code"
+
+  # Spans and metrics from any client but Claude Code (Codex's, today) are stored,
+  # each attribute kept only if it is on these lists, built from the keys real Codex
+  # 0.167 exports with free text taken out (tool arguments, prompts, paths, error
+  # text). A key Codex adds later is dropped until it is listed here: free text
+  # cannot reach storage under a new name. Span events mirror Codex's log events
+  # and keep the same allowlist as its log records.
+  transform/foreign-content:
+    error_mode: propagate
+    trace_statements:
+      - context: span
+        statements:
+          - 'keep_keys(attributes, ["aborted", "allow_provider_model_fallback", "api.path", "app_server.api_version", "app_server.client_name", "app_server.client_version", "app_server.connection_id", "apps_enabled", "build_mode", "busy_ns", "call_id", "catalog_entries", "catalog_entry_count", "cell.id", "code.line.number", "code.module.name", "codex.op", "codex.request.reasoning_effort", "codex.response.receive_wait_ms", "codex.tool.phase", "codex.turn.phase", "codex.turn.reasoning_effort", "codex.turn.token_usage.cache_write_input_tokens", "codex.turn.token_usage.cached_input_tokens", "codex.turn.token_usage.input_tokens", "codex.turn.token_usage.non_cached_input_tokens", "codex.turn.token_usage.output_tokens", "codex.turn.token_usage.reasoning_output_tokens", "codex.turn.token_usage.total_tokens", "codex.usage.reasoning_output_tokens", "codex.usage.total_tokens", "configuration_pending", "connector_count", "conversation.id", "dynamic_tool_count", "environment_count", "environment_id", "exit_signaled", "gen_ai.usage.cache_read.input_tokens", "gen_ai.usage.cache_write.input_tokens", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "http.method", "http.request.method", "http.response.status_code", "idle_ns", "input_count", "item_count", "max_total", "mcp.method", "mode", "model", "model.provided", "non_blocking", "outcome", "output_closed", "phase", "plugins_enabled", "provider", "refresh_strategy", "remote", "remote_plugin_enabled", "root_count", "rpc.method", "rpc.request_id", "rpc.system", "rpc.transport", "runtime_tool_call_id", "sandboxed", "search_info_count", "selected_skill_count", "server.address", "server.port", "server_name", "session_init.ephemeral", "session_init.required_mcp_server_count", "stop_reason", "submission.id", "target", "thread.id", "thread.name", "thread_id", "thread_start.dynamic_tool_count", "thread_start.experimental_raw_events", "tool_name", "tool_source", "tool_spec_count", "transport", "turn.has_metadata_header", "turn.id", "turn_id", "unified_exec_process_id", "user_input_count", "websocket.warmup", "wire_api"]) where resource.attributes["service.name"] != "claude-code"'
+      - context: spanevent
+        statements:
+          # Codex's tracing library names an event after its formatted message when it
+          # has one, so a name that is not an identifier may carry text: it is replaced.
+          - set(name, "event") where resource.attributes["service.name"] != "claude-code" and not IsMatch(name, "^[A-Za-z0-9_.:-]+$")
+          - 'keep_keys(attributes, ["event.name", "event.kind", "event.timestamp", "level", "target", "conversation.id", "app.version", "auth_mode", "originator", "terminal.type", "model", "slug", "duration_ms", "http.response.status_code", "attempt", "endpoint", "success", "input_token_count", "output_token_count", "cached_token_count", "cache_write_token_count", "reasoning_token_count", "tool_token_count", "ttft_ms", "service_tier", "model_reasoning_effort", "tool_name", "tool_namespace", "call_id", "tool_result_seq", "output_truncated", "decision", "source", "prompt_length", "provider_name", "reasoning_effort", "reasoning_summary", "context_window", "auto_compact_token_limit", "approval_policy", "sandbox_policy", "startup.phase", "startup.status", "turn.id", "usage.estimated_usd", "turn.interrupted", "speed"]) where resource.attributes["service.name"] != "claude-code"'
+    metric_statements:
+      - context: datapoint
+        statements:
+          - 'keep_keys(attributes, ["active", "actual_store", "after_prewarm", "app.version", "auth_mode", "backend", "bundle_shape", "cache", "candidate_set_truncated", "catalog_surface", "checker", "command_category", "config_use_memories", "credential_kind", "current_item_type", "db", "dependency", "error_kind", "event", "exposure", "fallback_reason", "feature_enabled", "format", "has_citations", "has_deny_globs", "incremental_tools", "is_git", "is_worktree", "kind", "method", "mode", "model", "multiple_hard_links", "multiple_write_roots", "operation", "originator", "outcome", "phase", "previous_item_type", "product_sku", "query_truncated", "read_allowed", "read_progress", "reason", "result", "sandbox", "sandbox_policy", "secure_outcome", "selected_store", "server_kind", "session_source", "shell_snapshot_mode", "source", "stage", "state", "status", "storage_phase", "store_mode", "success", "target_resolution_changed", "tmp_mem_enabled", "token_type", "tool", "tool_mode", "trigger", "tty", "version"]) where resource.attributes["service.name"] != "claude-code"'
+      - context: exemplar
+        statements:
+          - 'keep_keys(filtered_attributes, ["active", "actual_store", "after_prewarm", "app.version", "auth_mode", "backend", "bundle_shape", "cache", "candidate_set_truncated", "catalog_surface", "checker", "command_category", "config_use_memories", "credential_kind", "current_item_type", "db", "dependency", "error_kind", "event", "exposure", "fallback_reason", "feature_enabled", "format", "has_citations", "has_deny_globs", "incremental_tools", "is_git", "is_worktree", "kind", "method", "mode", "model", "multiple_hard_links", "multiple_write_roots", "operation", "originator", "outcome", "phase", "previous_item_type", "product_sku", "query_truncated", "read_allowed", "read_progress", "reason", "result", "sandbox", "sandbox_policy", "secure_outcome", "selected_store", "server_kind", "session_source", "shell_snapshot_mode", "source", "stage", "state", "status", "storage_phase", "store_mode", "success", "target_resolution_changed", "tmp_mem_enabled", "token_type", "tool", "tool_mode", "trigger", "tty", "version"]) where resource.attributes["service.name"] != "claude-code"'
+  # Claude Code's span attributes that carry content when a flag is on
+  # (https://code.claude.com/docs/en/monitoring-usage#traces-beta).
+  transform/drop-span-content:
+    error_mode: propagate
+    trace_statements:
+      - context: span
+        statements:
+          - set(status.message, "")
+          - delete_key(attributes, "user_prompt")
+          - delete_key(attributes, "new_context")
+          - delete_key(attributes, "system_reminders")
+          - delete_key(attributes, "system_prompt_preview")
+          - delete_key(attributes, "user_system_prompt")
+          - delete_key(attributes, "response.model_output")
+          - delete_key(attributes, "tool_input")
+          - delete_key(attributes, "file_path")
+          - delete_key(attributes, "full_command")
+          - delete_key(attributes, "hook_definitions")
+          # Free error text on any span; error_class keeps the category.
+          - delete_key(attributes, "error")
+  # Claude Code's span events are an allowlist: tool.output carries tool output and
+  # diffs, an exception event a message and stack trace. Only the retry marker passes.
+  filter/span-events-allowlist:
+    error_mode: propagate
+    traces:
+      spanevent:
+        - name != "gen_ai.request.attempt" and resource.attributes["service.name"] == "claude-code"
+
+service:
+  extensions: [bearertokenauth/livy, health_check]
+  telemetry:
+    logs:
+      level: info
+  # Exporters come from the storage overlay (pubsub.yaml or s3.yaml).
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/drop-identity, transform/drop-log-content, transform/codex-allowlist]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/drop-identity, transform/foreign-content]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/drop-identity, transform/foreign-content, transform/drop-span-content, filter/span-events-allowlist]

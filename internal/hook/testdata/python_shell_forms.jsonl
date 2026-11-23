@@ -1,0 +1,10 @@
+{"fn": "runs_gh_pr_create", "in": "git commit -m \"$(date)\"; gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "git commit -m \"$(cat <<'EOF'\nmsg\nEOF\n)\" && gh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo \"run `date` now\"; gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo \"today $(date) is; gh pr create\"", "out": false}
+{"fn": "runs_gh_pr_create", "in": "cd repo && \\\n  gh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh pr \\\n create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "# don't forget\ngh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "a && \\\nb && \\\ngh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo '$(gh pr create)'", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo \"today $(date) is; gh pr create now\"", "out": true}

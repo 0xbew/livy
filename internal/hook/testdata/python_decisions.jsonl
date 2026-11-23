@@ -1,0 +1,137 @@
+{"fn": "runs_gh_pr_create", "in": "gh pr create --title t --body b", "out": true}
+{"fn": "runs_gh_pr_create", "in": "timeout 115 gh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "GH_TOKEN=x gh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh --repo acme-org/sample pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "git push -u origin feature/x && gh pr create --fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "(cd sub && gh pr create --fill)", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo 'gh pr create'", "out": false}
+{"fn": "runs_gh_pr_create", "in": "cat > s.json <<'EOF'\n\"Bash(gh pr create *)\"\nEOF", "out": false}
+{"fn": "runs_gh_pr_create", "in": "git status --short", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh pr view 12", "out": false}
+{"fn": "runs_gh_pr_create", "in": "/opt/homebrew/bin/gh pr create --draft", "out": true}
+{"fn": "runs_gh_pr_create", "in": "sudo -n gh pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh pr created", "out": false}
+{"fn": "runs_gh_pr_create", "in": "ghx pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh  pr\tcreate", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh pr create\n", "out": true}
+{"fn": "runs_gh_pr_create", "in": "nohup gh pr create &", "out": true}
+{"fn": "runs_gh_pr_create", "in": "env -u X FOO=1 gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "timeout -s KILL 5 gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "timeout --signal=KILL 5 gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "if true; then gh pr create; fi", "out": true}
+{"fn": "runs_gh_pr_create", "in": "for x in a; do gh pr create; done", "out": true}
+{"fn": "runs_gh_pr_create", "in": "! gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "{ gh pr create; }", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo $(gh pr create)", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo `gh pr create`", "out": true}
+{"fn": "runs_gh_pr_create", "in": "x=$(gh pr create)", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh --repo pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh --repo=pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh -R pr/x pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh -R prx pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R p pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R pz pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R pr-x pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh --a -b pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh --a=1 --b 2 pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -- pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "cat <<EOF\ngh pr create\nEOF\ngh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "cat <<-EOF\ngh pr create\n\tEOF", "out": false}
+{"fn": "runs_gh_pr_create", "in": "cat <<<'gh pr create'", "out": false}
+{"fn": "runs_gh_pr_create", "in": "cat <<'A'<<B\nx\nA\ngh pr create\nB\ngh pr view", "out": false}
+{"fn": "runs_gh_pr_create", "in": "a|gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "a;(gh pr create)", "out": true}
+{"fn": "runs_gh_pr_create", "in": "a ;(gh pr create)", "out": true}
+{"fn": "runs_gh_pr_create", "in": "a\u00a0gh pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "gh\u00a0pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "command gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "exec time gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "else gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "elif gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "do gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "A=1 B=2 gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "A= gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "sudo env A=1 timeout 3 gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh pr create || true", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo gh pr create", "out": false}
+{"fn": "runs_gh_pr_create", "in": "\tgh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh pr create\u2003--fill", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R \u00e9 pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "gh -R pr\u00e9 pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "git commit -m \"fix; gh pr create later\"", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo 'a && gh pr create'", "out": false}
+{"fn": "runs_gh_pr_create", "in": "echo \"x | gh pr create\"", "out": false}
+{"fn": "runs_gh_pr_create", "in": "printf '%s\\n' 'y; gh pr create'", "out": false}
+{"fn": "runs_gh_pr_create", "in": "git commit -m \"$(gh pr create)\"", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo \"ok\" && gh pr create", "out": true}
+{"fn": "runs_gh_pr_create", "in": "git commit -m \"wip; gh pr create --fill\"", "out": true}
+{"fn": "runs_gh_pr_create", "in": "echo 'x && gh pr create --draft'", "out": true}
+{"fn": "remote_owner_repo", "in": "git@github.com:acme-org/sample.git", "out": ["github.com", "acme-org", "sample"]}
+{"fn": "remote_owner_repo", "in": "https://github.com/acme-org/sample-https.git/", "out": ["github.com", "acme-org", "sample-https"]}
+{"fn": "remote_owner_repo", "in": "git@github.com:AcmeOrg/Upper.git", "out": ["github.com", "AcmeOrg", "Upper"]}
+{"fn": "remote_owner_repo", "in": "git@gitlab.com:acme-org/elsewhere.git", "out": ["gitlab.com", "acme-org", "elsewhere"]}
+{"fn": "remote_owner_repo", "in": "git@github-work:acme-org/a.git", "out": ["github-work", "acme-org", "a"]}
+{"fn": "remote_owner_repo", "in": "ssh://git@github.com:22/acme-org/x.git", "out": ["github.com", "acme-org", "x"]}
+{"fn": "remote_owner_repo", "in": "https://user:tok@GitHub.com/o/r", "out": ["github.com", "o", "r"]}
+{"fn": "remote_owner_repo", "in": "https://github.com/o/r/extra", "out": null}
+{"fn": "remote_owner_repo", "in": "https://github.com/o", "out": null}
+{"fn": "remote_owner_repo", "in": "github.com/o/r", "out": null}
+{"fn": "remote_owner_repo", "in": "/local/path/repo", "out": null}
+{"fn": "remote_owner_repo", "in": "", "out": null}
+{"fn": "remote_owner_repo", "in": "  git@github.com:o/r.git  ", "out": ["github.com", "o", "r"]}
+{"fn": "remote_owner_repo", "in": "file:///tmp/o/r", "out": null}
+{"fn": "remote_owner_repo", "in": "git@github.com:o//r", "out": ["github.com", "o", "r"]}
+{"fn": "remote_owner_repo", "in": "https://github.com//o/r.git", "out": ["github.com", "o", "r"]}
+{"fn": "remote_owner_repo", "in": "git@:o/r", "out": null}
+{"fn": "remote_owner_repo", "in": "a:b/c", "out": ["a", "b", "c"]}
+{"fn": "leading_directory", "in": "cd /tmp/wt && gh pr create", "out": ["cd", "/tmp/wt"]}
+{"fn": "leading_directory", "in": "cd wt; git status", "out": ["cd", "wt"]}
+{"fn": "leading_directory", "in": "git -C /x/y status", "out": ["git_c", "/x/y"]}
+{"fn": "leading_directory", "in": "git -C a -C b status", "out": ["git_c", "a/b"]}
+{"fn": "leading_directory", "in": "git --no-pager -C /x log", "out": ["git_c", "/x"]}
+{"fn": "leading_directory", "in": "git -c a=b -C /x log", "out": ["git_c", "/x"]}
+{"fn": "leading_directory", "in": "git --git-dir=/x log", "out": null}
+{"fn": "leading_directory", "in": "cd", "out": ["cd", "~"]}
+{"fn": "leading_directory", "in": "cd -", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "cd ~/w", "out": ["cd", "~/w"]}
+{"fn": "leading_directory", "in": "cd \"$HOME\"/w", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "S=/tmp/x; cd $S", "out": ["cd", "/tmp/x"]}
+{"fn": "leading_directory", "in": "S=/tmp/x cd $S", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "export S=/tmp/y; cd ${S}/z", "out": ["cd", "/tmp/y/z"]}
+{"fn": "leading_directory", "in": "HOME=/x cd ~", "out": null}
+{"fn": "leading_directory", "in": "cd 'unclosed", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "cd $(pwd)", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "git -C", "out": null}
+{"fn": "leading_directory", "in": "cd -P /a", "out": ["cd", "/a"]}
+{"fn": "leading_directory", "in": "ls; cd /a", "out": null}
+{"fn": "leading_directory", "in": "\ncd /a", "out": ["cd", "/a"]}
+{"fn": "leading_directory", "in": "; cd /a", "out": null}
+{"fn": "leading_directory", "in": "echo hi", "out": null}
+{"fn": "leading_directory", "in": "S=~/x; cd $S", "out": ["cd", "~/x"]}
+{"fn": "leading_directory", "in": "S='~/x'; cd $S", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "A=1 && cd /q", "out": ["cd", "/q"]}
+{"fn": "leading_directory", "in": "A=1 || cd /q", "out": null}
+{"fn": "leading_directory", "in": "cd /a\\ b", "out": ["cd", "/a b"]}
+{"fn": "leading_directory", "in": "cd \"/a b\"", "out": ["cd", "/a b"]}
+{"fn": "leading_directory", "in": "git -C \"$(pwd)\" status", "out": ["git_c", ""]}
+{"fn": "leading_directory", "in": "export S; cd /a", "out": ["cd", "/a"]}
+{"fn": "leading_directory", "in": "export A=1 B=$A; cd $B", "out": ["cd", ""]}
+{"fn": "leading_directory", "in": "A=1 B=$A; cd $B", "out": ["cd", "1"]}
+{"fn": "leading_directory", "in": "( cd /p )", "out": ["cd", "/p"]}
+{"fn": "leading_directory", "in": "cd /a # comment", "out": ["cd", "/a"]}
+{"fn": "leading_directory", "in": "git -C '' status", "out": null}
+{"fn": "leading_directory", "in": "git -C /a -C '' x", "out": ["git_c", "/a"]}
+{"fn": "named_directory", "in": ["Bash", {"command": "cd /tmp/wt && gh pr create"}, "/s"], "out": ["cd", "/tmp/wt"]}
+{"fn": "named_directory", "in": ["Bash", {"command": "cd rel"}, "/s"], "out": ["cd", "/s/rel"]}
+{"fn": "named_directory", "in": ["Bash", {"command": "cd rel"}, "rel"], "out": ["cd", ""]}
+{"fn": "named_directory", "in": ["Read", {"file_path": "/a/b/c.txt"}, "/s"], "out": ["file_path", "/a/b"]}
+{"fn": "named_directory", "in": ["Edit", {"file_path": "rel/c.txt"}, "/s"], "out": ["file_path", "/s/rel"]}
+{"fn": "named_directory", "in": ["NotebookEdit", {"notebook_path": "/n/b.ipynb"}, "/s"], "out": ["file_path", "/n"]}
+{"fn": "named_directory", "in": ["Grep", {"path": "/g"}, "/s"], "out": ["file_path", "/g"]}
+{"fn": "named_directory", "in": ["mcp__x", {"path": "/g"}, "/s"], "out": null}
+{"fn": "named_directory", "in": ["Glob", {"path": " "}, "/s"], "out": null}
+{"fn": "named_directory", "in": ["Bash", {"command": "cd /a/../b/./c"}, "/s"], "out": ["cd", "/b/c"]}
+{"fn": "named_directory", "in": ["Bash", "notadict", "/s"], "out": null}
+{"fn": "named_directory", "in": ["Write", {"file_path": "~/x"}, "/s"], "out": ["file_path", "/home/dev"]}

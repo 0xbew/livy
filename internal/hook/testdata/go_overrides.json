@@ -1,0 +1,18 @@
+{
+ "python-bug:line-continuation": {
+  "rows": {
+   "gh pr \\\n create": true
+  },
+  "why": "Python splits at a backslash-newline's newline, so `gh pr \\\\<newline> create` is two commands and not counted; the shell joins the lines"
+ },
+ "python-bug:quoted-pr-create": {
+  "rows": {
+   "echo \"today $(date) is; gh pr create now\"": false,
+   "echo '$(gh pr create)'": false,
+   "echo 'x && gh pr create --draft'": false,
+   "git commit -m \"fix; gh pr create later\"": false,
+   "git commit -m \"wip; gh pr create --fill\"": false
+  },
+  "why": "Python splits commands at ; & | ( even inside quotes, so quoted text that mentions gh pr create counts as running it; Go splits shell words, so only a command that runs it counts"
+ }
+}

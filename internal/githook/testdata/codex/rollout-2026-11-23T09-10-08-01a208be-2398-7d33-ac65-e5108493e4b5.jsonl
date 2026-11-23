@@ -1,0 +1,2 @@
+{"timestamp":"2026-11-23T14:10:08.972Z","type":"session_meta","payload":{"session_id":"01a208be-2398-7d33-ac65-e5108493e4b5","id":"01a208be-2398-7d33-ac65-e5108493e4b5","timestamp":"2026-11-23T14:10:08.849Z","originator":"codex_exec","cli_version":"0.171.0","source":"exec","thread_source":"user"}}
+{"timestamp":"2026-11-23T14:10:10.083Z","type":"turn_context","payload":{"turn_id":"01a208be-25af-74f2-8fa5-9a746f2d4b0c","root_turn_id":"01a208be-25af-74f2-8fa5-9a746f2d4b0c","model":"gpt-5.6-luna","effort":"low"}}

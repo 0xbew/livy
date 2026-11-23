@@ -1,0 +1,200 @@
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
+    "FOO": "1",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://collector.example.test",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_RESOURCE_ATTRIBUTES": "engineer.handle=octocat",
+    "OTEL_TRACES_EXPORTER": "otlp"
+  },
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "instructions.loaded"
+            ],
+            "command": "python3",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostModelSwitch": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "model.switched"
+            ],
+            "command": "python3",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "work.pr_opened"
+            ],
+            "command": "python3",
+            "if": "Bash(gh pr create *)",
+            "timeout": 5,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/emit.py",
+              "--extract",
+              "--throttle",
+              "300"
+            ],
+            "async": true,
+            "command": "python3",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/spotcheck.py"
+            ],
+            "async": true,
+            "command": "python3",
+            "timeout": 30,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash|Agent|Task"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/emit.py",
+              "--extract",
+              "--event",
+              "session.ended"
+            ],
+            "async": true,
+            "command": "python3",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "session.started"
+            ],
+            "command": "python3",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/extract.py"
+            ],
+            "async": true,
+            "command": "python3",
+            "type": "command"
+          }
+        ],
+        "matcher": "startup|resume|clear|fork"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "echo mine",
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "turn.ended"
+            ],
+            "command": "python3",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/emit.py",
+              "--extract",
+              "--throttle",
+              "300"
+            ],
+            "async": true,
+            "command": "python3",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/ledger.py",
+              "prompt.submitted"
+            ],
+            "command": "python3",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "args": [
+              "/home/dev/.python-recorder/payload/current/emit.py",
+              "--extract",
+              "--throttle",
+              "300"
+            ],
+            "async": true,
+            "command": "python3",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
+  "otelHeadersHelper": "/usr/bin/python3 /home/dev/.python-recorder/payload/current/otel_headers.py",
+  "permissions": {
+    "allow": [
+      "Bash(echo \u2194)"
+    ]
+  }
+}

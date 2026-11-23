@@ -1,0 +1,34 @@
+# Storage overlay for Amazon S3: `--config=collector.yaml --config=s3.yaml`.
+#
+# Objects: s3://$LIVY_OTEL_BUCKET/$LIVY_OTEL_PREFIX/dt=YYYY-MM-DD/{logs,metrics,traces}_<uuidv7>.json.gz
+# (gzipped OTLP JSON, one object per request, UTC day of arrival).
+exporters:
+  awss3:
+    s3uploader:
+      region: ${env:LIVY_OTEL_REGION}
+      s3_bucket: ${env:LIVY_OTEL_BUCKET}
+      s3_prefix: ${env:LIVY_OTEL_PREFIX:-source=otel}
+      s3_partition_format: dt=%Y-%m-%d
+      s3_partition_timezone: UTC
+      unique_key_func_name: uuidv7
+      compression: gzip
+      # Empty in AWS (the region's endpoint); set only to test against MinIO.
+      endpoint: ${env:LIVY_OTEL_S3_ENDPOINT:-}
+      s3_force_path_style: ${env:LIVY_OTEL_S3_PATH_STYLE:-false}
+    marshaler: otlp_json
+    # Synchronous (collector.yaml): no queue and no collector-side retry; the
+    # client retries a failed request.
+    sending_queue:
+      enabled: false
+    retry_on_failure:
+      enabled: false
+    timeout: 10s
+
+service:
+  pipelines:
+    logs:
+      exporters: [awss3]
+    traces:
+      exporters: [awss3]
+    metrics:
+      exporters: [awss3]

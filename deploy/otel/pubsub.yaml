@@ -1,0 +1,31 @@
+# Storage overlay for Google Cloud: `--config=collector.yaml --config=pubsub.yaml`.
+#
+# The collector publishes every request, as OTLP protobuf, to one Pub/Sub topic; a
+# Cloud Storage subscription (gcp.sh creates it) writes the messages to the bucket as
+# Avro, each with its attributes (ce-type names the signal):
+#   gs://$LIVY_OTEL_BUCKET/$LIVY_OTEL_PREFIX/dt=YYYY-MM-DD/hh_mm_ssZ_<id>.avro
+# Logs, metrics and traces all go this way; the contrib Cloud Storage exporter cannot
+# write metrics.
+exporters:
+  googlecloudpubsub:
+    project: ${env:LIVY_OTEL_PROJECT}
+    topic: projects/${env:LIVY_OTEL_PROJECT}/topics/${env:LIVY_OTEL_TOPIC}
+    # Empty in Google Cloud; set only to test against the Pub/Sub emulator.
+    endpoint: ${env:LIVY_OTEL_PUBSUB_ENDPOINT:-}
+    insecure: ${env:LIVY_OTEL_PUBSUB_INSECURE:-false}
+    # Synchronous (collector.yaml): a publish failure fails the client's request,
+    # which the client retries.
+    sending_queue:
+      enabled: false
+    retry_on_failure:
+      enabled: false
+    timeout: 10s
+
+service:
+  pipelines:
+    logs:
+      exporters: [googlecloudpubsub]
+    metrics:
+      exporters: [googlecloudpubsub]
+    traces:
+      exporters: [googlecloudpubsub]

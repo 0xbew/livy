@@ -1,0 +1,7 @@
+# Real data (transcripts, commands, ledger lines): never committed.
+conformance/corpus
+conformance/.cache/
+conformance/out/
+__pycache__/
+*.pyc
+/bin/

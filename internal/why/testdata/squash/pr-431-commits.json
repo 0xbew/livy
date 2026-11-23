@@ -1,0 +1,29 @@
+[
+ {
+  "sha": "e8162ded11f6d42b2e6787ac88d0d434567534ed",
+  "commit": {
+   "message": "match: a file that fits several findings is narrowed by the quoted title\n\nAgent-Model: claude-sonnet-5-5\nAgent-Harness: claude-code\nAgent-Session: 4e7270ba-f9f4-4470-ba5d-9f1d26d94dd5\nAgent-Mode: drive\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>",
+   "committer": {
+    "date": "2026-11-06T02:26:45Z"
+   }
+  }
+ },
+ {
+  "sha": "c977ff3d267b6cc8e62e6ceda97ef44509e253a2",
+  "commit": {
+   "message": "match: a reply quoting two findings stays ambiguous\n\nAgent-Model: claude-sonnet-5-5\nAgent-Harness: claude-code\nAgent-Session: 4e7270ba-f9f4-4470-ba5d-9f1d26d94dd5\nAgent-Mode: drive\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>",
+   "committer": {
+    "date": "2026-11-06T03:25:06Z"
+   }
+  }
+ },
+ {
+  "sha": "5922a0db74fa6ad0c781ca832dba726a73da8b33",
+  "commit": {
+   "message": "check: keep titles that start with a label word\n\nAgent-Model: claude-sonnet-5-5\nAgent-Harness: claude-code\nAgent-Session: 4e7270ba-f9f4-4470-ba5d-9f1d26d94dd5\nAgent-Mode: drive\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>",
+   "committer": {
+    "date": "2026-11-06T03:53:23Z"
+   }
+  }
+ }
+]

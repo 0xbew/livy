@@ -1,0 +1,5 @@
+{
+  "scope": {"orgs": ["your-org"]},
+  "identity": {"handle": "your-handle"},
+  "sink": {"type": "local", "path": "/home/user/.livy-outbox"}
+}

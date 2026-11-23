@@ -1,0 +1,531 @@
+{
+ "$comment": "Types and constraints of the reference ledger event schema (descriptions omitted). Change it additively only: tools/schemacheck enforces that against the base branch.",
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "type": "object",
+ "required": [
+  "schema_version",
+  "ts",
+  "event",
+  "repo"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schema_version": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "ts": {
+   "type": "string"
+  },
+  "event": {
+   "type": "string",
+   "enum": [
+    "work.started",
+    "work.pr_opened",
+    "session.started",
+    "session.ended",
+    "turn.ended",
+    "model.switched",
+    "instructions.loaded",
+    "ledger.error",
+    "prompt.submitted",
+    "usage.api_call",
+    "work.pr_linked",
+    "interaction",
+    "call.detail",
+    "check.decision",
+    "tool.outcome",
+    "doctor.status",
+    "tool.call",
+    "prompt.captured",
+    "agent.launched",
+    "commit.recorded",
+    "commit.rewritten",
+    "prompt.revealed",
+    "skill.loaded"
+   ]
+  },
+  "repo": {
+   "type": "string"
+  },
+  "branch": {
+   "type": "string"
+  },
+  "session_id": {
+   "type": "string"
+  },
+  "prompt_id": {
+   "type": "string"
+  },
+  "model": {
+   "type": "string"
+  },
+  "from_model": {
+   "type": "string"
+  },
+  "to_model": {
+   "type": "string"
+  },
+  "reason": {
+   "type": "string"
+  },
+  "instruction_files": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "tool": {
+   "type": "string"
+  },
+  "background_task_count": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "session_cron_count": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "stop_hook_active": {
+   "type": "boolean"
+  },
+  "hook": {
+   "type": "string"
+  },
+  "raw_stdin_bytes": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "source": {
+   "type": "string",
+   "enum": [
+    "hook",
+    "transcript",
+    "transcript-backfill"
+   ]
+  },
+  "cc_version": {
+   "type": "string"
+  },
+  "message_id": {
+   "type": "string"
+  },
+  "request_id": {
+   "type": "string"
+  },
+  "is_sidechain": {
+   "type": "boolean"
+  },
+  "agent_id": {
+   "type": "string"
+  },
+  "recorder_build": {
+   "type": "string",
+   "description": "The Livy build that wrote the event: the 12-character commit, +dirty for uncommitted changes, or the module version. An event without it came from a build older than the field, or from a binary with no Go build info (rare: only a non-standard build)."
+  },
+  "effort": {
+   "type": "string"
+  },
+  "input_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "output_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "cache_read_input_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "cache_creation_input_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "cache_creation_5m_input_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "cache_creation_1h_input_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "thinking_tokens": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "web_search_requests": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "web_fetch_requests": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "service_tier": {
+   "type": "string"
+  },
+  "speed": {
+   "type": "string"
+  },
+  "pr_number": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "pr_repository": {
+   "type": "string"
+  },
+  "kind": {
+   "type": "string",
+   "enum": [
+    "prompt",
+    "interrupt",
+    "midturn",
+    "rejected",
+    "tool_error",
+    "agent_asked",
+    "plan_mode",
+    "compacted"
+   ]
+  },
+  "interaction_id": {
+   "type": "string"
+  },
+  "prompt_chars": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "permission_mode": {
+   "type": "string"
+  },
+  "after_error": {
+   "type": "boolean"
+  },
+  "slash_command": {
+   "type": "boolean"
+  },
+  "plan_mode_action": {
+   "type": "string",
+   "enum": [
+    "enter",
+    "exit"
+   ]
+  },
+  "tools": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "tools_incomplete": {
+   "type": "boolean"
+  },
+  "stop_reason": {
+   "type": "string"
+  },
+  "prompt_interaction_id": {
+   "type": "string"
+  },
+  "api_error": {
+   "type": "string"
+  },
+  "subagent_type": {
+   "type": "string"
+  },
+  "skill": {
+   "type": "string"
+  },
+  "per_turn_effort": {
+   "type": "string"
+  },
+  "check": {
+   "type": "string",
+   "enum": [
+    "guard",
+    "route"
+   ]
+  },
+  "contract": {
+   "type": "string"
+  },
+  "verdict": {
+   "type": "string"
+  },
+  "confidence": {
+   "type": "number"
+  },
+  "scores": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "number"
+   }
+  },
+  "scores_dropped": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "latency_ms": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "tool_use_id": {
+   "type": "string"
+  },
+  "jev_model": {
+   "type": "string"
+  },
+  "jev_model_mismatch": {
+   "type": "boolean"
+  },
+  "input_sha": {
+   "type": "string"
+  },
+  "opaque_script": {
+   "type": "boolean"
+  },
+  "paused_seconds": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "denylist_version": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "outcome": {
+   "type": "string",
+   "enum": [
+    "ran",
+    "blocked",
+    "not_run",
+    "unknown"
+   ]
+  },
+  "block_category": {
+   "type": "string"
+  },
+  "harness_reason": {
+   "type": "string"
+  },
+  "doctor_ok": {
+   "type": "boolean"
+  },
+  "doctor_checks": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "check",
+     "status"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "check": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "warn",
+       "fail"
+      ]
+     }
+    }
+   }
+  },
+  "payload_version": {
+   "type": "string"
+  },
+  "start_ts": {
+   "type": "string"
+  },
+  "end_ts": {
+   "type": "string"
+  },
+  "duration_ms": {
+   "type": "integer"
+  },
+  "result": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "error",
+    "no_result"
+   ]
+  },
+  "input_bytes": {
+   "type": "integer"
+  },
+  "output_bytes": {
+   "type": "integer"
+  },
+  "spawned_agent_id": {
+   "type": "string"
+  },
+  "target_via": {
+   "type": "string",
+   "enum": [
+    "cd",
+    "git_c",
+    "file_path",
+    "session"
+   ]
+  },
+  "target_repo": {
+   "type": "string"
+  },
+  "target_branch": {
+   "type": "string"
+  },
+  "text_status": {
+   "type": "string",
+   "enum": [
+    "uploaded",
+    "upload_off",
+    "outside_relay",
+    "refused_audit",
+    "no_denylist",
+    "error"
+   ]
+  },
+  "relay_proof": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "enum": [
+    "yes",
+    "no",
+    null
+   ]
+  },
+  "relay_proof_share": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "relay_source": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "relay_lag_minutes": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "parent_agent_id": {
+   "type": "string"
+  },
+  "agent_label": {
+   "type": "string",
+   "maxLength": 100
+  },
+  "agent_label_status": {
+   "type": "string",
+   "enum": [
+    "kept",
+    "refused_audit",
+    "no_denylist",
+    "absent",
+    "no_meta",
+    "unreadable"
+   ]
+  },
+  "scrubber_version": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "agent_role": {
+   "type": "string",
+   "enum": [
+    "orchestrator",
+    "review",
+    "librarian",
+    "labeller",
+    "other"
+   ]
+  },
+  "agent_role_raw": {
+   "type": "string",
+   "maxLength": 40
+  },
+  "parent_session_id": {
+   "type": "string"
+  },
+  "harness": {
+   "type": "string"
+  },
+  "harness_version": {
+   "type": "string"
+  },
+  "turn_id": {
+   "type": "string"
+  },
+  "ticket_key": {
+   "type": "string",
+   "minLength": 1
+  },
+  "commit_sha": {
+   "type": "string"
+  },
+  "old_commit_sha": {
+   "type": "string"
+  },
+  "rewrite_kind": {
+   "type": "string",
+   "enum": [
+    "amend",
+    "rebase"
+   ]
+  },
+  "prompt_ids": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "not_observable": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "trigger": {
+   "type": "string",
+   "enum": [
+    "agent",
+    "slash"
+   ]
+  },
+  "scope": {
+   "type": "string",
+   "enum": [
+    "project",
+    "user",
+    "plugin",
+    "managed",
+    "builtin"
+   ]
+  },
+  "scope_dir_hash": {
+   "type": "string"
+  },
+  "sha256": {
+   "type": "string"
+  },
+  "tree_sha256": {
+   "type": "string"
+  },
+  "hash_method": {
+   "type": "string",
+   "enum": [
+    "injected-content",
+    "disk-after-load"
+   ]
+  }
+ }
+}

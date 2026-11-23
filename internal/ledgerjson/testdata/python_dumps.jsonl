@@ -1,0 +1,52 @@
+{"kind": "value", "in": null, "out": "null"}
+{"kind": "value", "in": true, "out": "true"}
+{"kind": "value", "in": false, "out": "false"}
+{"kind": "value", "in": "", "out": "\"\""}
+{"kind": "value", "in": "plain", "out": "\"plain\""}
+{"kind": "value", "in": "quote\" back\\ slash/", "out": "\"quote\\\" back\\\\ slash/\""}
+{"kind": "value", "in": "\n\r\t\b\f", "out": "\"\\n\\r\\t\\b\\f\""}
+{"kind": "value", "in": "\u0000\u0001\u001f\u007f", "out": "\"\\u0000\\u0001\\u001f\\u007f\""}
+{"kind": "value", "in": "<>&'", "out": "\"<>&'\""}
+{"kind": "value", "in": "\u00e9", "out": "\"\\u00e9\""}
+{"kind": "value", "in": "\u65e5\u672c\u8a9e", "out": "\"\\u65e5\\u672c\\u8a9e\""}
+{"kind": "value", "in": "\ud83d\ude00", "out": "\"\\ud83d\\ude00\""}
+{"kind": "value", "in": "mixed \u00e9\ud83d\ude00\n", "out": "\"mixed \\u00e9\\ud83d\\ude00\\n\""}
+{"kind": "value", "in": "\u2028\u2029", "out": "\"\\u2028\\u2029\""}
+{"kind": "value", "in": "\ufeff", "out": "\"\\ufeff\""}
+{"kind": "value", "in": 0, "out": "0"}
+{"kind": "value", "in": -1, "out": "-1"}
+{"kind": "value", "in": 9007199254740993, "out": "9007199254740993"}
+{"kind": "value", "in": 9223372036854775807, "out": "9223372036854775807"}
+{"kind": "value", "in": 18446744073709551623, "out": "18446744073709551623"}
+{"kind": "value", "in": -1180591620717411303424, "out": "-1180591620717411303424"}
+{"kind": "value", "in": [], "out": "[]"}
+{"kind": "value", "in": {}, "out": "{}"}
+{"kind": "value", "in": [1, "a", null, [true, {}]], "out": "[1,\"a\",null,[true,{}]]"}
+{"kind": "value", "in": {"b": 1, "a": 2, "B": 3, "_x": 4, "\u00e9": 5, "a1": 6, "a10": 7, "a2": 8, "": 9, "~": 10}, "out": "{\"\":9,\"B\":3,\"_x\":4,\"a\":2,\"a1\":6,\"a10\":7,\"a2\":8,\"b\":1,\"~\":10,\"\\u00e9\":5}"}
+{"kind": "value", "in": {"nested": {"z": [{"y": 1, "x": 2}], "a": null}, "scores": {"q2": 0.25, "q1": 1.0}}, "out": "{\"nested\":{\"a\":null,\"z\":[{\"x\":2,\"y\":1}]},\"scores\":{\"q1\":1.0,\"q2\":0.25}}"}
+{"kind": "float", "hex": "0x0.0p+0", "out": "0.0"}
+{"kind": "float", "hex": "-0x0.0p+0", "out": "-0.0"}
+{"kind": "float", "hex": "0x1.0000000000000p+0", "out": "1.0"}
+{"kind": "float", "hex": "-0x1.4000000000000p+1", "out": "-2.5"}
+{"kind": "float", "hex": "0x1.999999999999ap-4", "out": "0.1"}
+{"kind": "float", "hex": "0x1.9000000000000p+6", "out": "100.0"}
+{"kind": "float", "hex": "0x1.3333333333334p-2", "out": "0.30000000000000004"}
+{"kind": "float", "hex": "0x1.4f8b588e368f1p-17", "out": "1e-05"}
+{"kind": "float", "hex": "0x1.a36e2eb1c432dp-14", "out": "0.0001"}
+{"kind": "float", "hex": "0x1.02e4b6ce5dc68p-13", "out": "0.00012345"}
+{"kind": "float", "hex": "0x1.421f5f40d8376p-23", "out": "1.5e-07"}
+{"kind": "float", "hex": "0x1.c12218377de6bp+46", "out": "123456789012345.67"}
+{"kind": "float", "hex": "0x1.c6bf52633ffffp+49", "out": "999999999999999.9"}
+{"kind": "float", "hex": "0x1.c6bf526340000p+49", "out": "1000000000000000.0"}
+{"kind": "float", "hex": "0x1.1c37937e08000p+53", "out": "1e+16"}
+{"kind": "float", "hex": "0x1.5eddb25e04800p+53", "out": "1.2345e+16"}
+{"kind": "float", "hex": "0x1.0f0cf064dd592p+73", "out": "1e+22"}
+{"kind": "float", "hex": "0x1.249ad2594c37dp+332", "out": "1e+100"}
+{"kind": "float", "hex": "0x0.0000000000001p-1022", "out": "5e-324"}
+{"kind": "float", "hex": "0x1.fffffffffffffp+1023", "out": "1.7976931348623157e+308"}
+{"kind": "float", "hex": "0x1.5555555555555p-1", "out": "0.6666666666666666"}
+{"kind": "float", "hex": "0x1.34a0000000000p+10", "out": "1234.5"}
+{"kind": "float", "hex": "0x1.bd70a3d70a3d7p-1", "out": "0.87"}
+{"kind": "float", "hex": "nan", "out": "NaN"}
+{"kind": "float", "hex": "inf", "out": "Infinity"}
+{"kind": "float", "hex": "-inf", "out": "-Infinity"}

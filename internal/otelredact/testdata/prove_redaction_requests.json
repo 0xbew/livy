@@ -1,0 +1,3086 @@
+{
+ "identity": [
+  "user.email",
+  "user.id",
+  "user.account_uuid",
+  "user.account_id",
+  "user.groups",
+  "user.name",
+  "enduser.id",
+  "host.name",
+  "host.id",
+  "process.owner",
+  "process.command_args",
+  "organization.id",
+  "identity.source",
+  "workspace.host_paths",
+  "cwd"
+ ],
+ "kept": {
+  "attempt": "1",
+  "call_id": "call-1",
+  "conversation.id": "c-1",
+  "cost_usd": "0.01",
+  "error_class": "Error_ENOENT",
+  "error_type": "Error_ENOENT",
+  "event.name": "api_request",
+  "input_token_count": "34",
+  "input_tokens": "12",
+  "livy.handle": "octocat",
+  "model": "m-1",
+  "outcome": "ok",
+  "service.name": "claude-code",
+  "session.id": "s-1",
+  "tool_name": "Bash",
+  "turn.id": "t-1",
+  "type": "input"
+ },
+ "logs": {
+  "resourceLogs": [
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "claude-code"
+       }
+      }
+     ]
+    },
+    "scopeLogs": [
+     {
+      "logRecords": [
+       {
+        "attributes": [
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         },
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "api_request"
+          }
+         },
+         {
+          "key": "session.id",
+          "value": {
+           "stringValue": "s-1"
+          }
+         },
+         {
+          "key": "model",
+          "value": {
+           "stringValue": "m-1"
+          }
+         },
+         {
+          "key": "cost_usd",
+          "value": {
+           "stringValue": "0.01"
+          }
+         },
+         {
+          "key": "input_tokens",
+          "value": {
+           "stringValue": "12"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "claude_code.api_request"
+        },
+        "timeUnixNano": "1"
+       },
+       {
+        "attributes": [
+         {
+          "key": "prompt",
+          "value": {
+           "stringValue": "LEAKED-prompt"
+          }
+         },
+         {
+          "key": "prompt_text",
+          "value": {
+           "stringValue": "LEAKED-prompt_text"
+          }
+         },
+         {
+          "key": "response",
+          "value": {
+           "stringValue": "LEAKED-response"
+          }
+         },
+         {
+          "key": "tool_parameters",
+          "value": {
+           "stringValue": "LEAKED-tool_parameters"
+          }
+         },
+         {
+          "key": "tool_input",
+          "value": {
+           "stringValue": "LEAKED-tool_input"
+          }
+         },
+         {
+          "key": "body",
+          "value": {
+           "stringValue": "LEAKED-body"
+          }
+         },
+         {
+          "key": "body_ref",
+          "value": {
+           "stringValue": "LEAKED-body_ref"
+          }
+         },
+         {
+          "key": "system_prompt",
+          "value": {
+           "stringValue": "LEAKED-system_prompt"
+          }
+         },
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "user_prompt"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "claude_code.user_prompt"
+        },
+        "timeUnixNano": "1"
+       },
+       {
+        "attributes": [
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "tool_result"
+          }
+         },
+         {
+          "key": "tool_name",
+          "value": {
+           "stringValue": "Bash"
+          }
+         },
+         {
+          "key": "error_type",
+          "value": {
+           "stringValue": "Error_ENOENT"
+          }
+         },
+         {
+          "key": "error",
+          "value": {
+           "stringValue": "LEAKED-ENOENT: /Users/someone/file"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "claude_code.tool_result"
+        },
+        "timeUnixNano": "1"
+       },
+       {
+        "attributes": [
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "api_error"
+          }
+         },
+         {
+          "key": "error_code",
+          "value": {
+           "stringValue": "529"
+          }
+         },
+         {
+          "key": "error",
+          "value": {
+           "stringValue": "LEAKED-api error text"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "claude_code.api_error"
+        },
+        "timeUnixNano": "1"
+       }
+      ],
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "com.anthropic.claude_code.events"
+      }
+     }
+    ]
+   },
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "codex_exec"
+       }
+      }
+     ]
+    },
+    "scopeLogs": [
+     {
+      "logRecords": [
+       {
+        "attributes": [
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         },
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "codex.tool_result"
+          }
+         },
+         {
+          "key": "arguments",
+          "value": {
+           "stringValue": "LEAKED-arguments"
+          }
+         },
+         {
+          "key": "output",
+          "value": {
+           "stringValue": "LEAKED-output"
+          }
+         },
+         {
+          "key": "error.message",
+          "value": {
+           "stringValue": "LEAKED-error"
+          }
+         },
+         {
+          "key": "input_token_count",
+          "value": {
+           "stringValue": "34"
+          }
+         },
+         {
+          "key": "conversation.id",
+          "value": {
+           "stringValue": "c-1"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "LEAKED-body"
+        },
+        "timeUnixNano": "1"
+       }
+      ],
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "codex_otel"
+      }
+     }
+    ]
+   },
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      }
+     ]
+    },
+    "scopeLogs": [
+     {
+      "logRecords": [
+       {
+        "attributes": [
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         },
+         {
+          "key": "event.name",
+          "value": {
+           "stringValue": "codex.tool_result"
+          }
+         },
+         {
+          "key": "arguments",
+          "value": {
+           "stringValue": "LEAKED-arguments"
+          }
+         },
+         {
+          "key": "output",
+          "value": {
+           "stringValue": "LEAKED-output"
+          }
+         },
+         {
+          "key": "error.message",
+          "value": {
+           "stringValue": "LEAKED-error"
+          }
+         },
+         {
+          "key": "input_token_count",
+          "value": {
+           "stringValue": "34"
+          }
+         },
+         {
+          "key": "conversation.id",
+          "value": {
+           "stringValue": "c-1"
+          }
+         }
+        ],
+        "body": {
+         "stringValue": "LEAKED-body"
+        },
+        "timeUnixNano": "1"
+       }
+      ],
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "unknown"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "mark": "LEAKED-",
+ "metrics": {
+  "resourceMetrics": [
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "claude-code"
+       }
+      }
+     ]
+    },
+    "scopeMetrics": [
+     {
+      "metrics": [
+       {
+        "name": "claude_code.token.usage",
+        "sum": {
+         "aggregationTemporality": 1,
+         "dataPoints": [
+          {
+           "asDouble": 12,
+           "attributes": [
+            {
+             "key": "user.email",
+             "value": {
+              "stringValue": "LEAKED-user.email"
+             }
+            },
+            {
+             "key": "user.id",
+             "value": {
+              "stringValue": "LEAKED-user.id"
+             }
+            },
+            {
+             "key": "user.account_uuid",
+             "value": {
+              "stringValue": "LEAKED-user.account_uuid"
+             }
+            },
+            {
+             "key": "user.account_id",
+             "value": {
+              "stringValue": "LEAKED-user.account_id"
+             }
+            },
+            {
+             "key": "user.groups",
+             "value": {
+              "stringValue": "LEAKED-user.groups"
+             }
+            },
+            {
+             "key": "user.name",
+             "value": {
+              "stringValue": "LEAKED-user.name"
+             }
+            },
+            {
+             "key": "enduser.id",
+             "value": {
+              "stringValue": "LEAKED-enduser.id"
+             }
+            },
+            {
+             "key": "host.name",
+             "value": {
+              "stringValue": "LEAKED-host.name"
+             }
+            },
+            {
+             "key": "host.id",
+             "value": {
+              "stringValue": "LEAKED-host.id"
+             }
+            },
+            {
+             "key": "process.owner",
+             "value": {
+              "stringValue": "LEAKED-process.owner"
+             }
+            },
+            {
+             "key": "process.command_args",
+             "value": {
+              "stringValue": "LEAKED-process.command_args"
+             }
+            },
+            {
+             "key": "organization.id",
+             "value": {
+              "stringValue": "LEAKED-organization.id"
+             }
+            },
+            {
+             "key": "identity.source",
+             "value": {
+              "stringValue": "LEAKED-identity.source"
+             }
+            },
+            {
+             "key": "workspace.host_paths",
+             "value": {
+              "stringValue": "LEAKED-workspace.host_paths"
+             }
+            },
+            {
+             "key": "cwd",
+             "value": {
+              "stringValue": "LEAKED-cwd"
+             }
+            },
+            {
+             "key": "session.id",
+             "value": {
+              "stringValue": "s-1"
+             }
+            },
+            {
+             "key": "type",
+             "value": {
+              "stringValue": "input"
+             }
+            },
+            {
+             "key": "model",
+             "value": {
+              "stringValue": "m-1"
+             }
+            }
+           ],
+           "exemplars": [
+            {
+             "asDouble": 12,
+             "filteredAttributes": [
+              {
+               "key": "user.email",
+               "value": {
+                "stringValue": "LEAKED-user.email"
+               }
+              },
+              {
+               "key": "user.id",
+               "value": {
+                "stringValue": "LEAKED-user.id"
+               }
+              },
+              {
+               "key": "user.account_uuid",
+               "value": {
+                "stringValue": "LEAKED-user.account_uuid"
+               }
+              },
+              {
+               "key": "user.account_id",
+               "value": {
+                "stringValue": "LEAKED-user.account_id"
+               }
+              },
+              {
+               "key": "user.groups",
+               "value": {
+                "stringValue": "LEAKED-user.groups"
+               }
+              },
+              {
+               "key": "user.name",
+               "value": {
+                "stringValue": "LEAKED-user.name"
+               }
+              },
+              {
+               "key": "enduser.id",
+               "value": {
+                "stringValue": "LEAKED-enduser.id"
+               }
+              },
+              {
+               "key": "host.name",
+               "value": {
+                "stringValue": "LEAKED-host.name"
+               }
+              },
+              {
+               "key": "host.id",
+               "value": {
+                "stringValue": "LEAKED-host.id"
+               }
+              },
+              {
+               "key": "process.owner",
+               "value": {
+                "stringValue": "LEAKED-process.owner"
+               }
+              },
+              {
+               "key": "process.command_args",
+               "value": {
+                "stringValue": "LEAKED-process.command_args"
+               }
+              },
+              {
+               "key": "organization.id",
+               "value": {
+                "stringValue": "LEAKED-organization.id"
+               }
+              },
+              {
+               "key": "identity.source",
+               "value": {
+                "stringValue": "LEAKED-identity.source"
+               }
+              },
+              {
+               "key": "workspace.host_paths",
+               "value": {
+                "stringValue": "LEAKED-workspace.host_paths"
+               }
+              },
+              {
+               "key": "cwd",
+               "value": {
+                "stringValue": "LEAKED-cwd"
+               }
+              }
+             ],
+             "timeUnixNano": "1"
+            }
+           ],
+           "timeUnixNano": "1"
+          }
+         ],
+         "isMonotonic": true
+        },
+        "unit": "tokens"
+       }
+      ],
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "com.anthropic.claude_code"
+      }
+     }
+    ]
+   },
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "codex_exec"
+       }
+      }
+     ]
+    },
+    "scopeMetrics": [
+     {
+      "metrics": [
+       {
+        "name": "codex.tool.call",
+        "sum": {
+         "aggregationTemporality": 1,
+         "dataPoints": [
+          {
+           "asDouble": 1,
+           "attributes": [
+            {
+             "key": "command",
+             "value": {
+              "stringValue": "LEAKED-codex metric"
+             }
+            },
+            {
+             "key": "secure_error",
+             "value": {
+              "stringValue": "LEAKED-error"
+             }
+            },
+            {
+             "key": "tool.arguments",
+             "value": {
+              "stringValue": "LEAKED-arguments"
+             }
+            },
+            {
+             "key": "outcome",
+             "value": {
+              "stringValue": "ok"
+             }
+            },
+            {
+             "key": "user.email",
+             "value": {
+              "stringValue": "LEAKED-user.email"
+             }
+            },
+            {
+             "key": "user.id",
+             "value": {
+              "stringValue": "LEAKED-user.id"
+             }
+            },
+            {
+             "key": "user.account_uuid",
+             "value": {
+              "stringValue": "LEAKED-user.account_uuid"
+             }
+            },
+            {
+             "key": "user.account_id",
+             "value": {
+              "stringValue": "LEAKED-user.account_id"
+             }
+            },
+            {
+             "key": "user.groups",
+             "value": {
+              "stringValue": "LEAKED-user.groups"
+             }
+            },
+            {
+             "key": "user.name",
+             "value": {
+              "stringValue": "LEAKED-user.name"
+             }
+            },
+            {
+             "key": "enduser.id",
+             "value": {
+              "stringValue": "LEAKED-enduser.id"
+             }
+            },
+            {
+             "key": "host.name",
+             "value": {
+              "stringValue": "LEAKED-host.name"
+             }
+            },
+            {
+             "key": "host.id",
+             "value": {
+              "stringValue": "LEAKED-host.id"
+             }
+            },
+            {
+             "key": "process.owner",
+             "value": {
+              "stringValue": "LEAKED-process.owner"
+             }
+            },
+            {
+             "key": "process.command_args",
+             "value": {
+              "stringValue": "LEAKED-process.command_args"
+             }
+            },
+            {
+             "key": "organization.id",
+             "value": {
+              "stringValue": "LEAKED-organization.id"
+             }
+            },
+            {
+             "key": "identity.source",
+             "value": {
+              "stringValue": "LEAKED-identity.source"
+             }
+            },
+            {
+             "key": "workspace.host_paths",
+             "value": {
+              "stringValue": "LEAKED-workspace.host_paths"
+             }
+            },
+            {
+             "key": "cwd",
+             "value": {
+              "stringValue": "LEAKED-cwd"
+             }
+            }
+           ],
+           "exemplars": [
+            {
+             "asDouble": 1,
+             "filteredAttributes": [
+              {
+               "key": "stdout",
+               "value": {
+                "stringValue": "LEAKED-stdout"
+               }
+              }
+             ],
+             "timeUnixNano": "1"
+            }
+           ],
+           "timeUnixNano": "1"
+          }
+         ],
+         "isMonotonic": true
+        }
+       }
+      ],
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "codex_otel"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "traces": {
+  "resourceSpans": [
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "claude-code"
+       }
+      }
+     ]
+    },
+    "scopeSpans": [
+     {
+      "scope": {
+       "attributes": [
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "LEAKED-user.email"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "LEAKED-user.id"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "LEAKED-user.account_uuid"
+         }
+        },
+        {
+         "key": "user.account_id",
+         "value": {
+          "stringValue": "LEAKED-user.account_id"
+         }
+        },
+        {
+         "key": "user.groups",
+         "value": {
+          "stringValue": "LEAKED-user.groups"
+         }
+        },
+        {
+         "key": "user.name",
+         "value": {
+          "stringValue": "LEAKED-user.name"
+         }
+        },
+        {
+         "key": "enduser.id",
+         "value": {
+          "stringValue": "LEAKED-enduser.id"
+         }
+        },
+        {
+         "key": "host.name",
+         "value": {
+          "stringValue": "LEAKED-host.name"
+         }
+        },
+        {
+         "key": "host.id",
+         "value": {
+          "stringValue": "LEAKED-host.id"
+         }
+        },
+        {
+         "key": "process.owner",
+         "value": {
+          "stringValue": "LEAKED-process.owner"
+         }
+        },
+        {
+         "key": "process.command_args",
+         "value": {
+          "stringValue": "LEAKED-process.command_args"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "LEAKED-organization.id"
+         }
+        },
+        {
+         "key": "identity.source",
+         "value": {
+          "stringValue": "LEAKED-identity.source"
+         }
+        },
+        {
+         "key": "workspace.host_paths",
+         "value": {
+          "stringValue": "LEAKED-workspace.host_paths"
+         }
+        },
+        {
+         "key": "cwd",
+         "value": {
+          "stringValue": "LEAKED-cwd"
+         }
+        }
+       ],
+       "name": "com.anthropic.claude_code"
+      },
+      "spans": [
+       {
+        "attributes": [
+         {
+          "key": "user_prompt",
+          "value": {
+           "stringValue": "LEAKED-user_prompt"
+          }
+         },
+         {
+          "key": "new_context",
+          "value": {
+           "stringValue": "LEAKED-new_context"
+          }
+         },
+         {
+          "key": "system_reminders",
+          "value": {
+           "stringValue": "LEAKED-system_reminders"
+          }
+         },
+         {
+          "key": "system_prompt_preview",
+          "value": {
+           "stringValue": "LEAKED-system_prompt_preview"
+          }
+         },
+         {
+          "key": "user_system_prompt",
+          "value": {
+           "stringValue": "LEAKED-user_system_prompt"
+          }
+         },
+         {
+          "key": "response.model_output",
+          "value": {
+           "stringValue": "LEAKED-response.model_output"
+          }
+         },
+         {
+          "key": "tool_input",
+          "value": {
+           "stringValue": "LEAKED-tool_input"
+          }
+         },
+         {
+          "key": "file_path",
+          "value": {
+           "stringValue": "LEAKED-file_path"
+          }
+         },
+         {
+          "key": "full_command",
+          "value": {
+           "stringValue": "LEAKED-full_command"
+          }
+         },
+         {
+          "key": "hook_definitions",
+          "value": {
+           "stringValue": "LEAKED-hook_definitions"
+          }
+         },
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         },
+         {
+          "key": "tool_name",
+          "value": {
+           "stringValue": "Bash"
+          }
+         },
+         {
+          "key": "session.id",
+          "value": {
+           "stringValue": "s-1"
+          }
+         }
+        ],
+        "endTimeUnixNano": "2",
+        "events": [
+         {
+          "attributes": [
+           {
+            "key": "content",
+            "value": {
+             "stringValue": "LEAKED-content"
+            }
+           },
+           {
+            "key": "output",
+            "value": {
+             "stringValue": "LEAKED-output"
+            }
+           },
+           {
+            "key": "diff",
+            "value": {
+             "stringValue": "LEAKED-diff"
+            }
+           },
+           {
+            "key": "bash_command",
+            "value": {
+             "stringValue": "LEAKED-bash_command"
+            }
+           }
+          ],
+          "name": "tool.output",
+          "timeUnixNano": "1"
+         },
+         {
+          "attributes": [
+           {
+            "key": "attempt",
+            "value": {
+             "stringValue": "1"
+            }
+           },
+           {
+            "key": "user.email",
+            "value": {
+             "stringValue": "LEAKED-user.email"
+            }
+           },
+           {
+            "key": "user.id",
+            "value": {
+             "stringValue": "LEAKED-user.id"
+            }
+           },
+           {
+            "key": "user.account_uuid",
+            "value": {
+             "stringValue": "LEAKED-user.account_uuid"
+            }
+           },
+           {
+            "key": "user.account_id",
+            "value": {
+             "stringValue": "LEAKED-user.account_id"
+            }
+           },
+           {
+            "key": "user.groups",
+            "value": {
+             "stringValue": "LEAKED-user.groups"
+            }
+           },
+           {
+            "key": "user.name",
+            "value": {
+             "stringValue": "LEAKED-user.name"
+            }
+           },
+           {
+            "key": "enduser.id",
+            "value": {
+             "stringValue": "LEAKED-enduser.id"
+            }
+           },
+           {
+            "key": "host.name",
+            "value": {
+             "stringValue": "LEAKED-host.name"
+            }
+           },
+           {
+            "key": "host.id",
+            "value": {
+             "stringValue": "LEAKED-host.id"
+            }
+           },
+           {
+            "key": "process.owner",
+            "value": {
+             "stringValue": "LEAKED-process.owner"
+            }
+           },
+           {
+            "key": "process.command_args",
+            "value": {
+             "stringValue": "LEAKED-process.command_args"
+            }
+           },
+           {
+            "key": "organization.id",
+            "value": {
+             "stringValue": "LEAKED-organization.id"
+            }
+           },
+           {
+            "key": "identity.source",
+            "value": {
+             "stringValue": "LEAKED-identity.source"
+            }
+           },
+           {
+            "key": "workspace.host_paths",
+            "value": {
+             "stringValue": "LEAKED-workspace.host_paths"
+            }
+           },
+           {
+            "key": "cwd",
+            "value": {
+             "stringValue": "LEAKED-cwd"
+            }
+           }
+          ],
+          "name": "gen_ai.request.attempt",
+          "timeUnixNano": "1"
+         },
+         {
+          "attributes": [
+           {
+            "key": "detail",
+            "value": {
+             "stringValue": "LEAKED-future_event"
+            }
+           }
+          ],
+          "name": "claude_code.future_event",
+          "timeUnixNano": "1"
+         }
+        ],
+        "kind": 1,
+        "name": "claude_code.tool",
+        "spanId": "0202020202020202",
+        "startTimeUnixNano": "1",
+        "traceId": "01010101010101010101010101010101"
+       },
+       {
+        "attributes": [
+         {
+          "key": "error",
+          "value": {
+           "stringValue": "LEAKED-ENOENT: /Users/someone/file"
+          }
+         },
+         {
+          "key": "error_class",
+          "value": {
+           "stringValue": "Error_ENOENT"
+          }
+         }
+        ],
+        "endTimeUnixNano": "2",
+        "events": [
+         {
+          "attributes": [
+           {
+            "key": "exception.message",
+            "value": {
+             "stringValue": "LEAKED-exception"
+            }
+           }
+          ],
+          "name": "exception",
+          "timeUnixNano": "1"
+         }
+        ],
+        "kind": 1,
+        "name": "claude_code.tool.execution",
+        "spanId": "0303030303030303",
+        "startTimeUnixNano": "1",
+        "status": {
+         "code": 2,
+         "message": "LEAKED-status"
+        },
+        "traceId": "01010101010101010101010101010101"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      },
+      {
+       "key": "service.name",
+       "value": {
+        "stringValue": "codex_exec"
+       }
+      }
+     ]
+    },
+    "scopeSpans": [
+     {
+      "scope": {
+       "name": "codex"
+      },
+      "spans": [
+       {
+        "attributes": [
+         {
+          "key": "arguments",
+          "value": {
+           "stringValue": "LEAKED-arguments"
+          }
+         },
+         {
+          "key": "error.message",
+          "value": {
+           "stringValue": "LEAKED-error"
+          }
+         },
+         {
+          "key": "code.file.path",
+          "value": {
+           "stringValue": "LEAKED-path"
+          }
+         },
+         {
+          "key": "workdir",
+          "value": {
+           "stringValue": "LEAKED-workdir"
+          }
+         },
+         {
+          "key": "gen_ai.input.messages",
+          "value": {
+           "stringValue": "LEAKED-messages"
+          }
+         },
+         {
+          "key": "turn.id",
+          "value": {
+           "stringValue": "t-1"
+          }
+         },
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         }
+        ],
+        "endTimeUnixNano": "2",
+        "events": [
+         {
+          "attributes": [
+           {
+            "key": "call_id",
+            "value": {
+             "stringValue": "call-1"
+            }
+           },
+           {
+            "key": "arguments",
+            "value": {
+             "stringValue": "LEAKED-event arguments"
+            }
+           }
+          ],
+          "name": "codex.tool_result",
+          "timeUnixNano": "1"
+         },
+         {
+          "name": "LEAKED-failed to read /Users/someone/file",
+          "timeUnixNano": "1"
+         }
+        ],
+        "kind": 1,
+        "name": "codex.tool_call",
+        "spanId": "0404040404040404",
+        "startTimeUnixNano": "1",
+        "traceId": "01010101010101010101010101010101"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "resource": {
+     "attributes": [
+      {
+       "key": "user.email",
+       "value": {
+        "stringValue": "LEAKED-user.email"
+       }
+      },
+      {
+       "key": "user.id",
+       "value": {
+        "stringValue": "LEAKED-user.id"
+       }
+      },
+      {
+       "key": "user.account_uuid",
+       "value": {
+        "stringValue": "LEAKED-user.account_uuid"
+       }
+      },
+      {
+       "key": "user.account_id",
+       "value": {
+        "stringValue": "LEAKED-user.account_id"
+       }
+      },
+      {
+       "key": "user.groups",
+       "value": {
+        "stringValue": "LEAKED-user.groups"
+       }
+      },
+      {
+       "key": "user.name",
+       "value": {
+        "stringValue": "LEAKED-user.name"
+       }
+      },
+      {
+       "key": "enduser.id",
+       "value": {
+        "stringValue": "LEAKED-enduser.id"
+       }
+      },
+      {
+       "key": "host.name",
+       "value": {
+        "stringValue": "LEAKED-host.name"
+       }
+      },
+      {
+       "key": "host.id",
+       "value": {
+        "stringValue": "LEAKED-host.id"
+       }
+      },
+      {
+       "key": "process.owner",
+       "value": {
+        "stringValue": "LEAKED-process.owner"
+       }
+      },
+      {
+       "key": "process.command_args",
+       "value": {
+        "stringValue": "LEAKED-process.command_args"
+       }
+      },
+      {
+       "key": "organization.id",
+       "value": {
+        "stringValue": "LEAKED-organization.id"
+       }
+      },
+      {
+       "key": "identity.source",
+       "value": {
+        "stringValue": "LEAKED-identity.source"
+       }
+      },
+      {
+       "key": "workspace.host_paths",
+       "value": {
+        "stringValue": "LEAKED-workspace.host_paths"
+       }
+      },
+      {
+       "key": "cwd",
+       "value": {
+        "stringValue": "LEAKED-cwd"
+       }
+      },
+      {
+       "key": "livy.handle",
+       "value": {
+        "stringValue": "octocat"
+       }
+      }
+     ]
+    },
+    "scopeSpans": [
+     {
+      "scope": {
+       "name": "codex"
+      },
+      "spans": [
+       {
+        "attributes": [
+         {
+          "key": "arguments",
+          "value": {
+           "stringValue": "LEAKED-arguments"
+          }
+         },
+         {
+          "key": "error.message",
+          "value": {
+           "stringValue": "LEAKED-error"
+          }
+         },
+         {
+          "key": "code.file.path",
+          "value": {
+           "stringValue": "LEAKED-path"
+          }
+         },
+         {
+          "key": "workdir",
+          "value": {
+           "stringValue": "LEAKED-workdir"
+          }
+         },
+         {
+          "key": "gen_ai.input.messages",
+          "value": {
+           "stringValue": "LEAKED-messages"
+          }
+         },
+         {
+          "key": "turn.id",
+          "value": {
+           "stringValue": "t-1"
+          }
+         },
+         {
+          "key": "user.email",
+          "value": {
+           "stringValue": "LEAKED-user.email"
+          }
+         },
+         {
+          "key": "user.id",
+          "value": {
+           "stringValue": "LEAKED-user.id"
+          }
+         },
+         {
+          "key": "user.account_uuid",
+          "value": {
+           "stringValue": "LEAKED-user.account_uuid"
+          }
+         },
+         {
+          "key": "user.account_id",
+          "value": {
+           "stringValue": "LEAKED-user.account_id"
+          }
+         },
+         {
+          "key": "user.groups",
+          "value": {
+           "stringValue": "LEAKED-user.groups"
+          }
+         },
+         {
+          "key": "user.name",
+          "value": {
+           "stringValue": "LEAKED-user.name"
+          }
+         },
+         {
+          "key": "enduser.id",
+          "value": {
+           "stringValue": "LEAKED-enduser.id"
+          }
+         },
+         {
+          "key": "host.name",
+          "value": {
+           "stringValue": "LEAKED-host.name"
+          }
+         },
+         {
+          "key": "host.id",
+          "value": {
+           "stringValue": "LEAKED-host.id"
+          }
+         },
+         {
+          "key": "process.owner",
+          "value": {
+           "stringValue": "LEAKED-process.owner"
+          }
+         },
+         {
+          "key": "process.command_args",
+          "value": {
+           "stringValue": "LEAKED-process.command_args"
+          }
+         },
+         {
+          "key": "organization.id",
+          "value": {
+           "stringValue": "LEAKED-organization.id"
+          }
+         },
+         {
+          "key": "identity.source",
+          "value": {
+           "stringValue": "LEAKED-identity.source"
+          }
+         },
+         {
+          "key": "workspace.host_paths",
+          "value": {
+           "stringValue": "LEAKED-workspace.host_paths"
+          }
+         },
+         {
+          "key": "cwd",
+          "value": {
+           "stringValue": "LEAKED-cwd"
+          }
+         }
+        ],
+        "endTimeUnixNano": "2",
+        "events": [
+         {
+          "attributes": [
+           {
+            "key": "call_id",
+            "value": {
+             "stringValue": "call-1"
+            }
+           },
+           {
+            "key": "arguments",
+            "value": {
+             "stringValue": "LEAKED-event arguments"
+            }
+           }
+          ],
+          "name": "codex.tool_result",
+          "timeUnixNano": "1"
+         },
+         {
+          "name": "LEAKED-failed to read /Users/someone/file",
+          "timeUnixNano": "1"
+         }
+        ],
+        "kind": 1,
+        "name": "codex.tool_call",
+        "spanId": "0505050505050505",
+        "startTimeUnixNano": "1",
+        "traceId": "01010101010101010101010101010101"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
