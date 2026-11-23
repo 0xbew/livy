@@ -142,7 +142,7 @@ func (rd *reader) carriedRepo(v any) (string, bool) {
 	case nil:
 		return "", true
 	case string:
-		return r, r == extract.Unknown || (isSlug(r) && rd.scope.Git.InScope("https://github.com/"+r, rd.orgs()))
+		return r, r == extract.Unknown || (isSlug(r) && rd.scope.Git.InScope("https://github.com/"+r, rd.scope.Entries))
 	}
 	return "", false
 }

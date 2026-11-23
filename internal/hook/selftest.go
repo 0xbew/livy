@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/0xbew/livy/internal/gitinfo"
@@ -113,37 +114,51 @@ func ledgerFailures(records []map[string]any) []string {
 }
 
 // scopeFailures checks the configured scope accepts in-scope remotes and refuses others,
-// and returns the in-scope orgs with the failures.
+// and returns the in-scope orgs and repos with the failures.
 func scopeFailures(stderr io.Writer) ([]string, []string) {
-	scope := orgs(stderr)
+	list := scope(stderr)
 	g := gitinfo.New(stderr)
 	g.Hosts = hosts(stderr)
 	switch {
 	case g.Hosts != nil && len(g.Hosts) == 0:
-		return scope, []string{"scope.hosts names no host"}
-	case len(scope) == 0:
-		return scope, []string{"no in-scope orgs configured"}
+		return list, []string{"scope.hosts names no host"}
+	case len(list) == 0:
+		return list, []string{"no in-scope orgs or repos configured"}
 	}
-	in := func(url string) bool { return g.InScope(url, func() []string { return orgs(stderr) }) }
+	in := func(url string) bool { return g.InScope(url, func() []string { return scope(stderr) }) }
 	host := gitinfo.ScopeHost
 	if len(g.Hosts) > 0 {
 		host = strings.ToLower(g.Hosts[0])
 	}
 	other := outOfScopeHost(g.Hosts)
 	var failures []string
-	org := scope[0]
-	for _, u := range []string{"git@" + host + ":" + org + "/r.git", "https://" + host + "/" + org + "/r",
-		"ssh://git@" + host + "/" + org + "/r.git"} {
+	slug, sibling := selftestSlugs(list[0])
+	for _, u := range []string{"git@" + host + ":" + slug + ".git", "https://" + host + "/" + slug,
+		"ssh://git@" + host + "/" + slug + ".git"} {
 		if !in(u) {
 			failures = append(failures, "an in-scope remote was rejected: "+u)
 		}
 	}
-	for _, u := range []string{"git@" + host + ":someone-else/r.git", "https://" + other + "/" + org + "/r", ""} {
+	out := []string{"git@" + host + ":someone-else/r.git", "https://" + other + "/" + slug, ""}
+	if sibling != "" && !slices.Contains(list, sibling) { // a configured sibling is in scope by choice
+		out = append(out, "https://"+host+"/"+sibling)
+	}
+	for _, u := range out {
 		if in(u) {
 			failures = append(failures, fmt.Sprintf("an out-of-scope remote was accepted: %q", u))
 		}
 	}
-	return scope, failures
+	return list, failures
+}
+
+// selftestSlugs is an owner/repo slug entry puts in scope and, for a repo entry, its owner's
+// other repository, which must stay out.
+func selftestSlugs(entry string) (slug, sibling string) {
+	owner, name, isRepo := strings.Cut(entry, "/")
+	if !isRepo {
+		return entry + "/r", ""
+	}
+	return entry, owner + "/not-" + name
 }
 
 // outOfScopeHost is a well-known host no configured entry names.

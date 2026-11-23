@@ -560,7 +560,7 @@ func (r *run) place(folder, sessionCwd string, haveCwd bool, sessionBranch strin
 			"target_repo and target_branch not recorded")
 		return nil
 	}
-	inScope := url != "" && r.git.InScope(url, func() []string { return orgs(r.stderr) })
+	inScope := url != "" && r.git.InScope(url, func() []string { return scope(r.stderr) })
 	if r.git.TimedOut() {
 		// A timeout is not "out of scope": say why the target is missing.
 		*problems = append(*problems, "target: git timed out reading the named folder's repo; target_repo and "+

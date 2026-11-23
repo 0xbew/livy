@@ -1164,16 +1164,22 @@ func Revisited(dirs []string) (fixable, not []string) {
 }
 
 // repos are the named repos and the extra candidates plus, unless --no-discover, the in-scope
-// repos Claude Code ran in. Only repos whose origin is under a configured org get the hook.
+// repos Claude Code ran in. Only repos whose origin is under a configured org, or is a
+// configured repo, get the hook.
 func repos(o options, p paths, extra ...string) []string {
 	cands := append(append([]string(nil), o.repos...), extra...)
 	if !o.noDiscover {
 		claude := filepath.Dir(p.settings)
 		cands = append(cands, transcriptRepos(claude)...)
 	}
-	orgs := map[string]bool{}
-	for _, org := range append(hook.Orgs(io.Discard), lower(o.orgs)...) {
-		orgs[org] = true
+	inScope := map[string]bool{}
+	for _, entry := range hook.Scope(io.Discard) {
+		inScope[entry] = true
+	}
+	for _, org := range lower(o.orgs) {
+		if !strings.Contains(org, "/") { // as hook.Scope reads scope.orgs: a slash names no org
+			inScope[org] = true
+		}
 	}
 	var out []string
 	seen := map[string]bool{}
@@ -1184,8 +1190,8 @@ func repos(o options, p paths, extra ...string) []string {
 		}
 		seen[top] = true
 		origin, _ := gitOut(top, "remote", "get-url", "origin")
-		_, owner, _, ok := gitinfo.RemoteOwnerRepo(origin)
-		if ok && orgs[strings.ToLower(owner)] {
+		_, owner, name, ok := gitinfo.RemoteOwnerRepo(origin)
+		if ok && (inScope[strings.ToLower(owner)] || inScope[strings.ToLower(owner+"/"+name)]) {
 			out = append(out, top)
 		}
 	}

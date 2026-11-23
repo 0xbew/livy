@@ -31,7 +31,7 @@ const (
 // for the next run instead of dropping its records as out of scope.
 type Scope struct {
 	Git          *gitinfo.Git
-	orgs         func() []string
+	scope        func() []string
 	home         string
 	repos        map[string]string // folder -> slug, "unknown" (declared folder), or "" (out of scope)
 	timedOutCwds map[string]bool
@@ -46,10 +46,10 @@ type Scope struct {
 	Problems map[string]int
 }
 
-// NewScope reads the in-scope orgs afresh on each check, as the hook does.
+// NewScope reads the in-scope orgs and repos afresh on each check, as the hook does.
 func NewScope(stderr io.Writer) *Scope {
 	home, _ := os.UserHomeDir()
-	return &Scope{Git: gitinfo.NewUnbudgeted(stderr), orgs: func() []string { return hook.Orgs(stderr) }, home: home,
+	return &Scope{Git: gitinfo.NewUnbudgeted(stderr), scope: func() []string { return hook.Scope(stderr) }, home: home,
 		repos: map[string]string{}, timedOutCwds: map[string]bool{}, TimedOutDirs: map[string]bool{},
 		roots: map[string]string{}, slugs: map[string]string{}, moves: map[string]*history{},
 		current: map[string]string{}, Problems: map[string]int{}}
@@ -91,7 +91,7 @@ func (s *Scope) RepoFor(cwd string) string {
 func (s *Scope) lookup(probe string) (result string, slow bool) {
 	s.Git.ResetTimedOut()
 	url := s.Git.Origin(probe)
-	ours := url != "" && s.Git.InScope(url, s.orgs)
+	ours := url != "" && s.Git.InScope(url, s.scope)
 	slow = !ours && s.Git.TimedOut()
 	if ours {
 		if _, owner, name, ok := gitinfo.RemoteOwnerRepo(url); ok {
@@ -211,7 +211,7 @@ func (s *Scope) slug(root string) string {
 	}
 	url := s.Git.Origin(root)
 	v := ""
-	if url != "" && s.Git.InScope(url, s.orgs) {
+	if url != "" && s.Git.InScope(url, s.scope) {
 		if _, owner, name, ok := gitinfo.RemoteOwnerRepo(url); ok {
 			v = owner + "/" + name
 		}
@@ -361,5 +361,6 @@ func branchAt(moves []move, second int64) (string, bool) {
 	return checked, set
 }
 
-// Orgs is the in-scope orgs, read afresh.
-func (s *Scope) Orgs() []string { return s.orgs() }
+// Entries is the in-scope orgs and owner/repo slugs, read afresh: what gitinfo.Git.InScope
+// matches against.
+func (s *Scope) Entries() []string { return s.scope() }

@@ -166,6 +166,33 @@ func TestEveryFailureExitsZeroAndIsSaid(t *testing.T) {
 	})
 }
 
+// Guards: a repository named in scope.repos that records nothing because its owner is not an
+// in-scope org, and a repo entry that brings in its owner's other repositories.
+func TestScopeReposRecordsTheListedRepoAndNoneOfItsSiblings(t *testing.T) {
+	for _, c := range []struct {
+		repos    string
+		recorded bool
+	}{
+		{"Acme/Widgets", true},
+		{"acme/widgets-old", false},
+		{"acme", false},
+	} {
+		t.Run(c.repos, func(t *testing.T) {
+			data := orgRepo(t)
+			t.Setenv("LIVY_SCOPE_ORGS", "")
+			t.Setenv("LIVY_SCOPE_REPOS", c.repos)
+			Run([]string{"session.started"}, stdinWith(t, `{"session_id":"s"}`), io.Discard)
+			got := lines(t, filepath.Join(data, "ledger.jsonl"))
+			if c.recorded && (len(got) != 1 || got[0]["event"] != "session.started" || got[0]["repo"] != "acme/widgets") {
+				t.Errorf("scope.repos %q: got %v, want one session.started for acme/widgets", c.repos, got)
+			}
+			if _, err := os.Stat(data); !c.recorded && !os.IsNotExist(err) {
+				t.Errorf("scope.repos %q: data dir exists (err %v), want no trace", c.repos, err)
+			}
+		})
+	}
+}
+
 // No network in the tool loop, checked where it cannot be bypassed: the hook's import
 // graph holds no networking package.
 func TestHookImportsNoNetwork(t *testing.T) {

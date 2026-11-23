@@ -31,6 +31,12 @@ func Settings() config.Resolved { return settings() }
 // Orgs is the lowercased orgs in scope; why a source named none goes to stderr.
 func Orgs(stderr io.Writer) []string { return orgs(stderr) }
 
+// Repos is the lowercased owner/repo slugs scope.repos puts in scope, each without its owner.
+func Repos(stderr io.Writer) []string { return repos(stderr) }
+
+// Scope is the orgs and repos in scope, the list gitinfo.Git.InScope matches against.
+func Scope(stderr io.Writer) []string { return scope(stderr) }
+
 // WriteError appends one ledger.error with repo "unknown", for a subcommand that runs
 // outside any one repository. When even that cannot be written, stderr says so.
 func WriteError(reason string, stderr io.Writer) {

@@ -158,7 +158,7 @@ type Resolved struct {
 
 // envKeys are the keys the env layer can set, and whether each is a comma-separated list.
 var envKeys = map[string]bool{
-	"scope.hosts": true, "scope.orgs": true, "scope.mode": false,
+	"scope.hosts": true, "scope.orgs": true, "scope.repos": true, "scope.mode": false,
 	"identity.handle": false, "identity.command": false, "content": false,
 	"sink.type": false, "sink.bucket": false, "sink.writer_sa": false,
 	"otel.endpoint": false, "otel.destination": false, "denylist.path": false, "denylist.command": false, "ticket.regex": false,

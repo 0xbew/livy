@@ -116,6 +116,9 @@ func orgsFrom(res config.Resolved, stderr io.Writer) []string {
 	if res.ManagedUnusable {
 		return nil // the refused managed file may name the orgs: no other source may
 	}
+	if heldByManaged(res, "scope.orgs", "scope.repos", stderr) {
+		return nil
+	}
 	if s, ok := res.Settings["scope.orgs"]; ok && (s.Layer == config.Managed || s.Layer == config.Env) {
 		return lower(s.Value)
 	}
@@ -128,7 +131,58 @@ func orgsFrom(res config.Resolved, stderr io.Writer) []string {
 	if s, ok := res.Settings["scope.orgs"]; ok {
 		return lower(s.Value)
 	}
+	if _, ok := res.Settings["scope.repos"]; ok {
+		return nil // Livy's own settings name the scope: the Python tool's orgs would widen it
+	}
 	return legacyOrgs(stderr)
+}
+
+// repos is the lowercased owner/repo slugs in scope.repos, each in scope without its owner.
+func repos(stderr io.Writer) []string { return reposFrom(settings(), stderr) }
+
+// reposFrom is repos for resolved settings res. An entry that is not owner/repo is said and
+// skipped: read as an org it would bring in every repository its owner has.
+func reposFrom(res config.Resolved, stderr io.Writer) []string {
+	s, ok := res.Settings["scope.repos"]
+	if !ok || res.ManagedUnusable || heldByManaged(res, "scope.repos", "scope.orgs", stderr) {
+		return nil
+	}
+	var out []string
+	for _, r := range lower(s.Value) {
+		owner, name, _ := strings.Cut(r, "/")
+		if owner == "" || name == "" || strings.Contains(name, "/") {
+			fmt.Fprintf(stderr, "ledger: scope.repos entry %q is not owner/repo; ignoring it\n", r)
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+// heldByManaged is whether the managed file sets the other scope key and not key: the admin's
+// file then decides the whole scope, as a lower layer's key would widen it.
+func heldByManaged(res config.Resolved, key, other string, stderr io.Writer) bool {
+	s, set := res.Settings[key]
+	if o, ok := res.Settings[other]; !ok || o.Layer != config.Managed || (set && s.Layer == config.Managed) {
+		return false
+	}
+	if set {
+		fmt.Fprintf(stderr, "ledger: the managed file sets %s, so %s from another source is ignored\n", other, key)
+	}
+	return true
+}
+
+// scope is what gitinfo.InScope matches: the in-scope orgs and the in-scope repos. An org entry
+// holding a slash names no org, so it stays out rather than match one repository.
+func scope(stderr io.Writer) []string {
+	res := settings()
+	var out []string
+	for _, o := range orgsFrom(res, stderr) {
+		if !strings.Contains(o, "/") {
+			out = append(out, o)
+		}
+	}
+	return append(out, reposFrom(res, stderr)...)
 }
 
 // hosts are the configured scope.hosts, lowercased; nil when unset (github.com). A setting

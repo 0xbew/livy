@@ -9,7 +9,7 @@ write the same lines, with the same scope rule and the same plugin, as `livy ins
 |---|---|---|
 | Where the orb runs | your Docker host, via `amp orb provider` | Amp's cloud |
 | How Livy gets in | baked into the orb image (`Dockerfile`) | a personal Amp plugin carrying the binary (`orb-plugin.ts`) |
-| How the record leaves | `dispatch.sh` copies it out on pause and delete | the orb pushes it to a private sink repo (`sink.type: git`) |
+| How the record leaves | `dispatch.sh` copies it out on pause and delete | the orb pushes it to a private sink repo (`sink.type: git`); `livy drain` moves it on to your sink |
 | Credentials in the orb | none | the git credentials Amp already gives the orb |
 | When it ships | every pause and delete | after the first turn, at most every 5 minutes, and 3 minutes after the last turn |
 | Records the git hooks (`work.started`) | yes (`livy install` runs in the image) | no |
@@ -48,4 +48,26 @@ deploy/amp-orbs/build.sh bundle config.json out/livy
 sink repository is private: a public one publishes the ledger. On a laptop the system
 plugin of the same name, written by `livy install`, takes precedence, and the bundle does nothing
 outside an orb either way.
+
+### Moving the record on: `livy drain`
+
+The sink repository is a waypoint. On a machine whose sink is the real destination (a bucket or
+a folder), name the repository as the drain source in its config:
+
+```json
+{"drain": {"source": {"type": "git", "remote": "https://github.com/<owner>/<private repo>.git", "branch": "main"}}}
+```
+
+`livy drain` then copies every object the orbs pushed into that machine's own `sink`, under the
+same key (`source=agent-hooks/dt=…/handle=<the orb's handle>/<hash>.jsonl.gz`) and write-once,
+so a re-run copies nothing new and "already there" counts as copied. It remembers the last
+commit it drained (`drain-state.json` in the data folder) and reads only what was pushed since.
+The daily job runs it before its upload whenever `drain.source` is set; nothing else is
+installed. git's own credential helper signs in to read the repository.
+
+It never changes a line: the orb already applied its scope, and a changed line would change the
+key. It refuses an object whose key is not the one `livy emit` gives its bytes,
+or with a line the ledger schema does not allow, says so once as a `ledger.error`, and tries it
+again on each run (a newer build may read a newer schema). Drained objects stay in the
+repository; delete them there when you no longer need the copy.
 

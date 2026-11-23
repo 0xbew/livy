@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -229,20 +230,17 @@ func (g *Git) sshHostname(alias string) string {
 }
 
 // InScope is true only for an origin on a host in g.Hosts (github.com when none are set)
-// whose owner is in orgs(). orgs is asked only once the URL parses, as it may say why it
-// found none.
-func (g *Git) InScope(url string, orgs func() []string) bool {
-	host, owner, _, ok := RemoteOwnerRepo(url)
+// that scope() names: a lowercased entry is an org, matching every repository it owns, or an
+// owner/repo slug, matching that one repository. scope is asked only once the URL parses, as
+// it may say why it found none.
+func (g *Git) InScope(url string, scope func() []string) bool {
+	host, owner, name, ok := RemoteOwnerRepo(url)
 	if !ok {
 		return false
 	}
-	found := false
-	for _, o := range orgs() {
-		if strings.ToLower(owner) == o {
-			found = true
-		}
-	}
-	if !found {
+	owner = strings.ToLower(owner)
+	slug := owner + "/" + strings.ToLower(name)
+	if !slices.ContainsFunc(scope(), func(e string) bool { return e == owner || e == slug }) {
 		return false
 	}
 	hosts := map[string]bool{}

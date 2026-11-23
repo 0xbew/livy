@@ -84,6 +84,29 @@ func doctorStatus(ctx context.Context, args []string) (rest []string) {
 	return rest
 }
 
+// runEmit is `livy emit`. The daily job drains first, when a drain source is set, so a drain
+// failure's ledger.error ships in the sweep.
+func runEmit(ctx context.Context, args []string) int {
+	rest := doctorStatus(ctx, args)
+	if isDaily(args) {
+		emit.DailyDrain(ctx, os.Stderr, sinkFor)
+	}
+	return emit.Run(ctx, rest, os.Stdin, os.Stderr, sinkFor)
+}
+
+// isDaily is whether emit's arguments are the daily job's, which alone passes --doctor-status;
+// a dry run is not, since it writes nothing.
+func isDaily(args []string) bool {
+	daily := false
+	for _, a := range args {
+		if a == "--dry-run" {
+			return false
+		}
+		daily = daily || a == "--doctor-status" || strings.HasPrefix(a, "--doctor-status=")
+	}
+	return daily
+}
+
 func main() {
 	os.Exit(dispatch(os.Args[1:]))
 }
@@ -155,9 +178,7 @@ func dispatch(args []string) int {
 		return githook.PostRewrite(args[2:], os.Stdin)
 	case len(args) >= 1 && args[0] == "emit":
 		signal.Ignore(syscall.SIGPIPE)
-		return withSignals(func(ctx context.Context) int {
-			return emit.Run(ctx, doctorStatus(ctx, args[1:]), os.Stdin, os.Stderr, sinkFor)
-		})
+		return withSignals(func(ctx context.Context) int { return runEmit(ctx, args[1:]) })
 	default:
 		return machineCommand(args)
 	}
@@ -165,7 +186,7 @@ func dispatch(args []string) int {
 
 // The usage line, either side of the old recorder's subcommands.
 const (
-	usageHead = "usage: livy <subcommand> [args]: hook <event> | hook --selftest | amp <event> | spotcheck [--selftest] | git post-checkout <prev> <new> <flag> | git prepare-commit-msg <file> [source] [sha] | git post-commit | git post-rewrite amend|rebase | emit [--extract] [--throttle S] [--event NAME] [--dry-run] [--doctor-status P] | install [--refresh-denylist] | uninstall | doctor [--json] [--status-file P]"
+	usageHead = "usage: livy <subcommand> [args]: hook <event> | hook --selftest | amp <event> | spotcheck [--selftest] | git post-checkout <prev> <new> <flag> | git prepare-commit-msg <file> [source] [sha] | git post-commit | git post-rewrite amend|rebase | emit [--extract] [--throttle S] [--event NAME] [--dry-run] [--doctor-status P] | drain | install [--refresh-denylist] | uninstall | doctor [--json] [--status-file P]"
 	usageTail = " | prompts [--upload on|off] [--backfill-days N] [--dry-run] | why [--data DIR] <sha|A..B> | profile [--top N] [--all] [--data DIR] <sha|A..B> | show --prompt <id> | --commit <sha> | incident <id> --range A..B [--data DIR] [--out FILE] [--excerpts] | vault backfill [--days N] | relay (--collector URL [--headers-command CMD] | --sink) --listen 127.0.0.1:PORT | version"
 )
 
@@ -206,6 +227,8 @@ func machineCommand(args []string) int {
 		return show.Main(args[1:], os.Stdout, os.Stderr)
 	case len(args) >= 1 && args[0] == "incident":
 		return incident.Main(args[1:], os.Stdout, os.Stderr)
+	case len(args) >= 1 && args[0] == "drain":
+		return withSignals(func(ctx context.Context) int { return emit.Drain(ctx, args[1:], os.Stderr, sinkFor) })
 	case len(args) >= 1 && args[0] == "relay":
 		return relay.Main(args[1:], os.Stderr)
 	case len(args) >= 1 && args[0] == "otel-headers":

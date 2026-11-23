@@ -705,10 +705,6 @@ func nilIfEmpty(s string) any {
 	return s
 }
 
-func (rd *reader) orgs() func() []string {
-	return rd.scope.Orgs
-}
-
 // carried is the tool names, start places and out-of-scope hashes the last pass left, in
 // exactly the shape this reader writes: they come from a state file and go into lines.
 func (rd *reader) carried(carry any) (map[string]string, map[string][2]string, map[string]bool) {
@@ -771,7 +767,7 @@ func (rd *reader) carriedWhere(started map[string]any, names map[string]string, 
 			continue
 		}
 		repo, ok := pair[0].(string)
-		if !ok || !isSlug(repo) || !rd.scope.Git.InScope("https://github.com/"+repo, rd.scope.Orgs) {
+		if !ok || !isSlug(repo) || !rd.scope.Git.InScope("https://github.com/"+repo, rd.scope.Entries) {
 			continue
 		}
 		switch b := pair[1].(type) {

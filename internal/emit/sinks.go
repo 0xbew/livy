@@ -214,3 +214,32 @@ func GCSConfig(res config.Resolved) (gcs.Config, error) {
 	}
 	return gcsConfig(str, list), nil
 }
+
+// drainSource builds drain.source, the repository `livy drain` reads. Only a git repository
+// can be drained.
+func drainSource(res config.Resolved) (drainRepo, drainPlace, error) {
+	var bad []string
+	str := func(k string) string {
+		v, ok := res.Settings["drain.source."+k]
+		s, isStr := v.Value.(string)
+		if ok && !isStr {
+			bad = append(bad, "drain.source."+k+" must be a string")
+		}
+		return s
+	}
+	typ := str("type")
+	at := drainPlace{remote: str("remote"), branch: str("branch")}
+	switch {
+	case len(bad) > 0:
+		return nil, at, errors.New(strings.Join(bad, "; "))
+	case typ == "":
+		return nil, at, ErrNoDrainSource
+	case typ != "git":
+		return nil, at, fmt.Errorf("drain.source.type %q is not git, the one source livy drain reads", typ)
+	}
+	src, err := git.NewSource(git.Config{Remote: at.remote, Branch: at.branch, Dir: filepath.Join(hook.DataDir(), drainCloneDir)})
+	if err != nil {
+		return nil, at, err
+	}
+	return src, at, nil
+}

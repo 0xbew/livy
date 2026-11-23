@@ -156,13 +156,7 @@ func checkConfig(r *Report, res config.Resolved) {
 		}
 		r.add(status, "data folder", "%s", n.Text)
 	}
-	if orgs := hook.Orgs(io.Discard); len(orgs) == 0 && res.ManagedUnusable {
-		r.add(Fail, "scope", "no org in scope while the managed file is refused: nothing is recorded anywhere")
-	} else if len(orgs) == 0 {
-		r.add(Fail, "scope", "no org configured (scope.orgs): nothing is recorded anywhere")
-	} else {
-		r.add(OK, "scope", "orgs %s", strings.Join(orgs, ", "))
-	}
+	checkScope(r, res.ManagedUnusable)
 	if emit.Handle() == "" {
 		r.add(Warn, "identity", "no identity.handle: objects carry no handle= part")
 	}
@@ -332,6 +326,23 @@ func checkSchedule(ctx context.Context, r *Report) {
 	}
 }
 
+// checkScope names the orgs and the repos in scope; with neither, nothing is recorded.
+func checkScope(r *Report, managedUnusable bool) {
+	orgs, repos := hook.Orgs(io.Discard), hook.Repos(io.Discard)
+	switch {
+	case len(orgs) == 0 && len(repos) == 0 && managedUnusable:
+		r.add(Fail, "scope", "no org in scope while the managed file is refused: nothing is recorded anywhere")
+	case len(orgs) == 0 && len(repos) == 0:
+		r.add(Fail, "scope", "no org configured (scope.orgs): nothing is recorded anywhere")
+	case len(repos) == 0:
+		r.add(OK, "scope", "orgs %s", strings.Join(orgs, ", "))
+	case len(orgs) == 0:
+		r.add(OK, "scope", "repos %s", strings.Join(repos, ", "))
+	default:
+		r.add(OK, "scope", "orgs %s; repos %s", strings.Join(orgs, ", "), strings.Join(repos, ", "))
+	}
+}
+
 // checkRepo says whether the folder doctor runs in is in scope and has the git hook: the
 // one place an out-of-scope repo's silence is explained.
 func checkRepo(ctx context.Context, r *Report) {
@@ -341,7 +352,7 @@ func checkRepo(ctx context.Context, r *Report) {
 		r.add(OK, "this repo", "not a repository with an origin: nothing here is recorded")
 		return
 	}
-	if !g.InScope(origin, func() []string { return hook.Orgs(io.Discard) }) {
+	if !g.InScope(origin, func() []string { return hook.Scope(io.Discard) }) {
 		r.add(OK, "this repo", "%s is out of scope: nothing here is recorded, by design", g.Slug())
 		return
 	}

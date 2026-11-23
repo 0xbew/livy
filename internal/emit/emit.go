@@ -65,7 +65,8 @@ const (
 // DataNames are the files and folders this package keeps in the data folder, by exact name.
 // `livy uninstall --purge` deletes these and nothing else.
 func DataNames() []string {
-	return []string{SegmentsDir, UploadedDir, RejectedDir, LockName, LastRunName, LastUploadKey, LastTextUpload, gitCloneDir}
+	return []string{SegmentsDir, UploadedDir, RejectedDir, LockName, LastRunName, LastUploadKey, LastTextUpload, gitCloneDir,
+		drainCloneDir, drainStateName, drainStateName + ".tmp"}
 }
 
 // Timing. A throttled run (mid-session) never waits for another emitter: that one has the

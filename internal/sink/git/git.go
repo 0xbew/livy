@@ -219,6 +219,12 @@ func (s *Sink) run(ctx context.Context, args ...string) error { return s.git(ctx
 // clone; signing is off, since a signing setup may need a key or a prompt this pass cannot give;
 // prompting is off, so a missing credential fails at once rather than hanging the upload.
 func (s *Sink) git(ctx context.Context, dir string, args ...string) error {
+	_, err := s.gitOutput(ctx, dir, args...)
+	return err
+}
+
+// gitOutput is git with its standard output.
+func (s *Sink) gitOutput(ctx context.Context, dir string, args ...string) ([]byte, error) {
 	base := []string{"-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
 		"-c", "user.name=" + author, "-c", "user.email=" + authorEmail}
 	if dir != "" {
@@ -226,16 +232,16 @@ func (s *Sink) git(ctx context.Context, dir string, args ...string) error {
 	}
 	cmd := exec.CommandContext(ctx, "git", append(base, args...)...)
 	cmd.Env = append(gitFreeEnv(), "GIT_TERMINAL_PROMPT=0", "GCM_INTERACTIVE=never", "LC_ALL=C")
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
 		msg := strings.TrimSpace(stderr.String())
 		if len(msg) > 300 {
 			msg = msg[:300] + "…"
 		}
-		return fmt.Errorf("git %s: %w (%s)", args[0], err, msg)
+		return nil, fmt.Errorf("git %s: %w (%s)", args[0], err, msg)
 	}
-	return nil
+	return stdout.Bytes(), nil
 }
 
 // gitFreeEnv is this process's environment without the variables that point git at another

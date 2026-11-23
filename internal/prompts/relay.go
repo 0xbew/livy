@@ -324,7 +324,7 @@ func sourceRepo(scope *extract.Scope, problems map[string]int) func(string, bool
 		}
 		scope.Git.ResetTimedOut()
 		url := scope.Git.Origin(cwd)
-		ours := url != "" && scope.Git.InScope(url, scope.Orgs)
+		ours := url != "" && scope.Git.InScope(url, scope.Entries)
 		if !ours && scope.Git.TimedOut() {
 			problems["source_scope_timeout"]++
 		}

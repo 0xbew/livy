@@ -49,10 +49,11 @@ what a fast judgment model would decide about the agent's next move.
   (Prompt text is kept only in the local vault below, never in the ledger, and never sent from it.)
   `work.pr_opened` is written only when a Bash command, read as the shell reads it,
   actually runs `gh pr create`.
-- **Only the orgs you name.** A repo is in scope only when its `origin` is on
+- **Only the orgs and repos you name.** A repo is in scope only when its `origin` is on
   a configured host (`github.com` unless `scope.hosts` says otherwise; SSH aliases resolved)
-  under an org you configured. No org is built in:
-  with none configured nothing is recorded. An out-of-scope repo leaves no trace in the ledger.
+  under an org you configured (`scope.orgs`), or is one you named as `owner/repo`
+  (`scope.repos`), which brings in that repository and none of its owner's others. No org is
+  built in: with neither configured nothing is recorded. An out-of-scope repo leaves no trace in the ledger.
   OTEL is not scoped this way: see [OTEL export](#otel-export-on-by-default) and `otel.ignore`.
 
 ## The guarantees
@@ -145,11 +146,14 @@ wins, and a re-install keeps the sink already recorded. `livy doctor` shows it a
 
 Highest first: an admin's managed file, then `LIVY_*` environment variables, then
 `~/.livy/config.json`, then built-in defaults. A key the managed file sets cannot be
-changed by a lower layer, and a managed `sink` key locks the whole `sink` section.
+changed by a lower layer, and a managed `sink` key locks the whole `sink` section. A managed
+file that sets one of `scope.orgs` and `scope.repos` decides both: the other key from a lower
+layer is ignored, as it would widen what the admin scoped.
 
 | Setting | File key | Environment |
 |---|---|---|
 | Orgs in scope | `scope.orgs` (list) | `LIVY_SCOPE_ORGS` (comma-separated) |
+| Single repos in scope | `scope.repos` (list of `owner/repo`; default none) | `LIVY_SCOPE_REPOS` (comma-separated) |
 | Hosts in scope | `scope.hosts` (list; default `github.com`) | `LIVY_SCOPE_HOSTS` |
 | Handle | `identity.handle` | `LIVY_IDENTITY_HANDLE` |
 | Sink | `sink.*` (above) | `LIVY_SINK_TYPE`, `LIVY_SINK_BUCKET` |

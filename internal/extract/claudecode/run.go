@@ -517,7 +517,7 @@ func (ps *extractPass) linkLines(p *parsed, fl *fileLines) {
 		if !ok || !nok || number == 0 || ts == "" {
 			continue
 		}
-		if !ps.scope.Git.InScope("https://github.com/"+repo, ps.scope.Orgs) {
+		if !ps.scope.Git.InScope("https://github.com/"+repo, ps.scope.Entries) {
 			continue
 		}
 		lk := extract.PyStr(link["sessionId"]) + "|" + repo + "|" + fmt.Sprint(number)

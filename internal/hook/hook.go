@@ -96,7 +96,7 @@ func harnessFlag(args []string) (rest []string, harness string) {
 }
 
 func (r *run) inScope() bool {
-	return r.git.InScope(r.git.Origin(""), func() []string { return orgs(r.stderr) })
+	return r.git.InScope(r.git.Origin(""), func() []string { return scope(r.stderr) })
 }
 
 func (r *run) handle(args []string, stdin *os.File, enforceScope bool) {
