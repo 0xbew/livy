@@ -3,10 +3,11 @@ package githook
 import "testing"
 
 // Guards: a commit credited to the wrong author. A human commit stamped as an agent's, a
-// merge or squash message stamped, an amend or an agent's own trailers duplicated, a model
-// invented when none was recorded, and a Codex commit credited to the Claude Code session
-// that launched it (Codex inherits CLAUDECODE and CLAUDE_CODE_SESSION_ID, read from a real
-// Codex run's environment). Expected messages are git interpret-trailers' own output shape.
+// merge or squash message stamped, an amend or an agent's own trailers duplicated (also when
+// they sit a paragraph above a Co-Authored-By line), a model invented when none was recorded,
+// and a Codex commit credited to the Claude Code session that launched it (Codex inherits
+// CLAUDECODE and CLAUDE_CODE_SESSION_ID, read from a real Codex run's environment). Expected
+// messages are git interpret-trailers' own output shape.
 func TestStampMessage(t *testing.T) {
 	claude := map[string]string{"CLAUDECODE": "1", "CLAUDE_CODE_SESSION_ID": "s-1"}
 	codex := map[string]string{"CODEX_THREAD_ID": "t-1"}
@@ -34,6 +35,10 @@ func TestStampMessage(t *testing.T) {
 		{name: "the agent's own trailer wins", env: claude, source: "message", facts: known,
 			msg:  "fix: thing\n\nAgent-Session: mine\n",
 			want: "fix: thing\n\nAgent-Session: mine\nAgent-Model: claude-opus-5-5\nAgent-Harness: claude-code@2.1.319\n"},
+		{name: "an Agent-* block above a separate Co-Authored-By paragraph: one block, no second Agent-Session",
+			env: claude, source: "message", facts: known,
+			msg:  "fix: thing\n\nAgent-Session: mine\n\nCo-Authored-By: A\n",
+			want: "fix: thing\n\nAgent-Session: mine\nCo-Authored-By: A\nAgent-Model: claude-opus-5-5\nAgent-Harness: claude-code@2.1.319\n"},
 		{name: "an agent's Agent-Mode does not hide Agent-Model (git matches keys by prefix)", env: claude, source: "message",
 			facts: known, msg: "fix: thing\n\nAgent-Mode: drive\n",
 			want: "fix: thing\n\nAgent-Mode: drive\nAgent-Model: claude-opus-5-5\nAgent-Harness: claude-code@2.1.319\nAgent-Session: s-1\n"},

@@ -148,12 +148,13 @@ type jsonBuilder struct {
 	totals JSONTotals
 	// agentTypes is each subagent's type by its id, from the ledger.
 	agentTypes map[string]string
+	files      commitFiles
 }
 
 func (b *jsonBuilder) commit(e why.Explained) JSONCommit {
 	c := e.Commit
 	b.totals.Commits++
-	rw := reworkOf(c, e.Report.Sessions, b.events)
+	rw := reworkOf(c, e.Report.Sessions, b.events, &b.files)
 	b.totals.Fixups += b2i(rw.fixup)
 	b.totals.Rewritten += b2i(len(rw.rewrites) > 0)
 	out := JSONCommit{SHA: c.SHA, Committed: c.Committed.UTC(), Sessions: make([]JSONSession, 0, len(e.Report.Sessions)),

@@ -52,7 +52,7 @@ func (rw rework) String() string {
 }
 
 // reworkOf reads c's rework signals from git and the ledger events.
-func reworkOf(c why.Commit, sessions []why.Session, events []why.Event) rework {
+func reworkOf(c why.Commit, sessions []why.Session, events []why.Event, cf *commitFiles) rework {
 	rw := rework{rewrites: map[string]int{}}
 	subject, err := why.Git("log", "-1", "--no-show-signature", "--format=%s", c.SHA, "--")
 	if err == nil {
@@ -70,32 +70,42 @@ func reworkOf(c why.Commit, sessions []why.Session, events []why.Event) rework {
 	if len(earlier) == 0 {
 		return rw
 	}
-	mine, err := changedFiles(c.SHA)
-	if err != nil {
+	if err := cf.know(append([]string{c.SHA}, earlier...)); err != nil {
+		rw.problem = "git could not list the commits' files"
+		return rw
+	}
+	mine, ok := cf.files(c.SHA)
+	if !ok {
 		rw.problem = "git could not list this commit's files"
 		return rw
 	}
-	again := map[string]bool{}
+	rw.again, rw.earlier = filesAgain(mine, earlier, cf)
+	return rw
+}
+
+// filesAgain is how many of mine the first earlierRead of earlier (those this clone has)
+// changed too, and how many of those commits changed any.
+func filesAgain(mine map[string]bool, earlier []string, cf *commitFiles) (again, commits int) {
+	seen := map[string]bool{}
 	read := 0
 	for _, sha := range earlier {
 		if read == earlierRead {
 			break
 		}
-		files, err := changedFiles(sha)
-		if err != nil {
+		files, ok := cf.files(sha)
+		if !ok {
 			continue // a commit this clone lacks: another repo's, or a rebased-away pick
 		}
 		read++
 		touched := false
 		for f := range files {
 			if mine[f] {
-				again[f], touched = true, true
+				seen[f], touched = true, true
 			}
 		}
-		rw.earlier += b2i(touched)
+		commits += b2i(touched)
 	}
-	rw.again = len(again)
-	return rw
+	return len(seen), commits
 }
 
 // earlierCommits are the commits made before c by c's sessions: on its first-parent line by
@@ -141,19 +151,4 @@ func sessionCommits(c why.Commit, s why.Session, events []why.Event) []string {
 		}
 	}
 	return out
-}
-
-// changedFiles is the paths a commit changes; they are compared, never printed.
-func changedFiles(sha string) (map[string]bool, error) {
-	out, err := why.Git("diff-tree", "--no-commit-id", "--name-only", "-r", "--root", "--no-renames", sha, "--")
-	if err != nil {
-		return nil, err
-	}
-	files := map[string]bool{}
-	for f := range strings.Lines(out) {
-		if f = strings.TrimSpace(f); f != "" {
-			files[f] = true
-		}
-	}
-	return files, nil
 }

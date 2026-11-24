@@ -669,6 +669,9 @@ func Explore(rev string, data []string) (Range, error) {
 // Git runs one git command in the working directory, under why's timeout.
 func Git(args ...string) (string, error) { return git(args...) }
 
+// GitInput runs one git command in the working directory with input on its stdin, under why's timeout.
+func GitInput(input string, args ...string) (string, error) { return gitInput(input, args...) }
+
 // ParseAnyOrder parses fl's flags wherever they stand among args, as why does, and returns
 // the other arguments in order.
 func ParseAnyOrder(fl *flag.FlagSet, args []string) ([]string, error) { return parseAnyOrder(fl, args) }

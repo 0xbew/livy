@@ -24,6 +24,7 @@ type report struct {
 	events []why.Event
 	top    int
 	all    bool
+	files  commitFiles
 
 	windows, timed, placed, total int
 	wall, busy, wait              time.Duration
@@ -36,7 +37,7 @@ func (r *report) commit(e why.Explained, indent string) {
 	c := e.Commit
 	r.commits++
 	fmt.Fprintf(r.w, "%scommit %s  committed %s\n", indent, why.Short(c.SHA), c.Committed.Format(time.RFC3339))
-	rw := reworkOf(c, e.Report.Sessions, r.events)
+	rw := reworkOf(c, e.Report.Sessions, r.events, &r.files)
 	r.fixups += b2i(rw.fixup)
 	r.rewritten += b2i(len(rw.rewrites) > 0)
 	fmt.Fprintf(r.w, "%s  rework: %s\n", indent, rw.String())

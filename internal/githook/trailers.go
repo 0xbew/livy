@@ -122,10 +122,14 @@ func stampFile(path, source, mode string) error {
 // committing, and none on a merge or squash message, which describes other commits.
 func stampMessage(msg []byte, getenv func(string) string, source string, lookup func(agent) sessionFacts, mode string) ([]byte, error) {
 	a, ok := committer(getenv)
-	if !ok || source == "merge" || source == "squash" || !hasText(msg, commentPrefix()) {
+	if !ok || source == "merge" || source == "squash" {
 		return msg, nil
 	}
-	return addTrailers(msg, trailerLines(a, lookup(a), mode))
+	comment := commentPrefix()
+	if !hasText(msg, comment) {
+		return msg, nil
+	}
+	return addTrailers(msg, trailerLines(a, lookup(a), mode), comment)
 }
 
 // autoCommentChars are the characters git picks a comment character from under
@@ -154,15 +158,19 @@ func commentPrefix() string {
 // git's candidates counts as a comment, which can only leave a message unstamped.
 func hasText(msg []byte, comment string) bool {
 	for l := range strings.SplitSeq(string(msg), "\n") {
-		switch {
-		case strings.TrimSpace(l) == "":
-		case comment == "auto" && strings.ContainsRune(autoCommentChars, rune(l[0])):
-		case comment != "auto" && strings.HasPrefix(l, comment):
-		default:
+		if strings.TrimSpace(l) != "" && !isComment(l, comment) {
 			return true
 		}
 	}
 	return false
+}
+
+// isComment is whether the non-blank line l is a comment under comment (see hasText for "auto").
+func isComment(l, comment string) bool {
+	if comment == "auto" {
+		return strings.ContainsRune(autoCommentChars, rune(l[0]))
+	}
+	return strings.HasPrefix(l, comment)
 }
 
 // committer is the agent harness whose shell is making this commit. Both harnesses' variables
@@ -202,9 +210,11 @@ func trailerLines(a agent, f sessionFacts, mode string) []string {
 // --trailer` does (no divider), unless the block already has its key: an amend, or an agent
 // that wrote its own, keeps what the message says. The keys are compared here, exactly:
 // git's own --if-exists matches a key by prefix, so an existing Agent-Mode would suppress
-// Agent-Model.
-func addTrailers(msg []byte, lines []string) ([]byte, error) {
-	existing, err := gitRun(hookTimeout(), bytes.NewReader(msg), "interpret-trailers", "--no-divider", "--parse")
+// Agent-Model. An agent's Agent-* paragraph above the final block is joined to it first
+// (joinAgentBlock), so its keys count; with nothing to add the message is left as written.
+func addTrailers(msg []byte, lines []string, comment string) ([]byte, error) {
+	joined := joinAgentBlock(msg, comment)
+	existing, err := gitRun(hookTimeout(), bytes.NewReader(joined), "interpret-trailers", "--no-divider", "--parse")
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +234,7 @@ func addTrailers(msg []byte, lines []string) ([]byte, error) {
 		return msg, nil
 	}
 	args := append([]string{"interpret-trailers", "--no-divider", "--where", "end", "--if-exists", "add"}, add...)
-	return gitRun(hookTimeout(), bytes.NewReader(msg), args...)
+	return gitRun(hookTimeout(), bytes.NewReader(joined), args...)
 }
 
 // hookTimeout is the git timeout the hooks share (gitinfo's setting).

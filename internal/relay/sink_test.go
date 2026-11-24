@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -9,6 +10,27 @@ import (
 	"testing"
 	"time"
 )
+
+// TestMain points HOME at an empty folder: the receiver reads otel.ignore from
+// ~/.livy/config.json on every export, and a developer's own list made these tests drop the
+// exports they assert are stored. A test that needs a config sets HOME itself.
+func TestMain(m *testing.M) {
+	os.Exit(runWithEmptyHome(m))
+}
+
+func runWithEmptyHome(m *testing.M) int {
+	home, err := os.MkdirTemp("", "relay-home-")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "relay tests: no empty HOME:", err)
+		return 2
+	}
+	defer func() { _ = os.RemoveAll(home) }() // a leftover temp folder fails no test
+	if err := os.Setenv("HOME", home); err != nil {
+		fmt.Fprintln(os.Stderr, "relay tests: HOME not set:", err)
+		return 2
+	}
+	return m.Run()
+}
 
 // Guards: Livy's receiver storing an export unredacted (identity reaching the bucket), a
 // protobuf export accepted and lost without a word (Livy can only redact OTLP/JSON), an empty
