@@ -16,13 +16,14 @@ import (
 	"github.com/0xbew/livy/internal/clock"
 	"github.com/0xbew/livy/internal/extract/codex"
 	"github.com/0xbew/livy/internal/hook"
+	"github.com/0xbew/livy/internal/keyspace"
 	"github.com/0xbew/livy/internal/ledger"
 	"github.com/0xbew/livy/internal/otelignore"
 	"github.com/0xbew/livy/internal/otelredact"
 )
 
-// Sink mode: the relay is Livy's own OTLP receiver. Each admitted export is decoded as
-// OTLP/JSON, redacted by the collector's rules (otelredact), and appended as one line to
+// Sink mode: the relay is Livy's own OTLP receiver. Each admitted export is decoded from
+// OTLP/JSON, or from OTLP protobuf for logs and traces, redacted by the collector's rules (otelredact), and appended as one line to
 // <data dir>/otel/ledger.jsonl, a stream of its own beside the hook ledger, which emit ships
 // through the configured sink under source=otel/. The export is answered once its line is on
 // disk, so a network outage loses nothing; only an export made while the receiver is down
@@ -55,12 +56,6 @@ type Store struct {
 // ("" with stored false: an empty export, nothing to keep). dropped marks the size cap.
 func (s *Store) Write(path string, body []byte, in http.Header) (status int, kind string, payload []byte, stored, dropped bool, problem string) {
 	signal := signalOf[path]
-	ct, _, _ := strings.Cut(in.Get("Content-Type"), ";")
-	if strings.TrimSpace(ct) != "application/json" {
-		return http.StatusUnsupportedMediaType, "text/plain",
-			[]byte("livy stores OTLP/JSON only: set the exporter's protocol to http/json (Claude Code) or json (Codex)"),
-			false, false, "protobuf refused: an exporter is not set to OTLP/JSON (re-run livy install)"
-	}
 	if strings.EqualFold(strings.TrimSpace(in.Get("Content-Encoding")), "gzip") {
 		zr, err := gzip.NewReader(bytes.NewReader(body))
 		if err != nil {
@@ -71,11 +66,9 @@ func (s *Store) Write(path string, body []byte, in http.Header) (status int, kin
 			return http.StatusRequestEntityTooLarge, "text/plain", []byte("too large"), false, false, "unreadable export: gzip too large or cut short"
 		}
 	}
-	dec := json.NewDecoder(bytes.NewReader(body))
-	dec.UseNumber()
-	var doc map[string]any
-	if err := dec.Decode(&doc); err != nil {
-		return http.StatusBadRequest, "text/plain", []byte("not OTLP/JSON"), false, false, "unreadable export: not JSON"
+	doc, err := decodeExport(signal, in.Get("Content-Type"), body)
+	if err != nil {
+		return http.StatusBadRequest, "text/plain", []byte("not an OTLP export livy reads"), false, false, "unreadable export: " + err.Error()
 	}
 	s.ignore(signal, doc, in)
 	n, err := otelredact.Redact(signal, doc)
@@ -84,9 +77,13 @@ func (s *Store) Write(path string, body []byte, in http.Header) (status int, kin
 		return http.StatusBadRequest, "text/plain", []byte("not an OTLP/JSON export"), false, false,
 			"unreadable export: " + err.Error()
 	}
-	ok := []byte("{}")
+	// An empty export response, in the encoding the export came in.
+	okKind, ok := "application/json", []byte("{}")
+	if isProtobuf(in.Get("Content-Type")) {
+		okKind, ok = "application/x-protobuf", nil
+	}
 	if n == 0 {
-		return http.StatusOK, "application/json", ok, false, false, ""
+		return http.StatusOK, okKind, ok, false, false, ""
 	}
 	line, err := json.Marshal(map[string]any{"schema_version": 1, "ts": iso(clock.Now()), "signal": signal, "otlp": doc})
 	if err != nil {
@@ -111,11 +108,33 @@ func (s *Store) Write(path string, body []byte, in http.Header) (status int, kin
 	if err != nil {
 		return http.StatusInternalServerError, "text/plain", []byte("could not write"), false, false, "could not write: " + err.Error()
 	}
+	if err := keyspace.AddOtel(filepath.Dir(s.Dir), line); err != nil {
+		note = strings.TrimPrefix(note+"; "+err.Error(), "; ")
+	}
 	if done.Unchecked != nil {
 		note = strings.TrimPrefix(note+"; stream line written without the torn-line check: "+done.Unchecked.Error(), "; ")
 	}
 	// The export is stored and ships; only `livy why`'s copy of its decisions can be lost, and is said.
-	return http.StatusOK, "application/json", ok, true, false, note
+	return http.StatusOK, okKind, ok, true, false, note
+}
+
+// decodeExport reads one export as OTLP/JSON, or as OTLP protobuf for logs and traces.
+func decodeExport(signal, contentType string, body []byte) (map[string]any, error) {
+	if isProtobuf(contentType) {
+		return protoExport(signal, body)
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.UseNumber()
+	var doc map[string]any
+	if err := dec.Decode(&doc); err != nil {
+		return nil, errors.New("not JSON")
+	}
+	return doc, nil
+}
+
+func isProtobuf(contentType string) bool {
+	ct, _, _ := strings.Cut(contentType, ";")
+	return strings.TrimSpace(ct) == "application/x-protobuf"
 }
 
 // ignore drops from doc what otel.ignore says must leave no trace. The list is read on each

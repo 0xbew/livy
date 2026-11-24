@@ -105,15 +105,19 @@ type JSONPrompt struct {
 
 // newJSONReport is the JSON form of commits and what was read.
 func newJSONReport(commits []Explained, src *sources) JSONReport {
-	var b strings.Builder
-	writeSources(&b, src)
-	out := JSONReport{Schema: JSONSchema, Commits: make([]JSONCommit, 0, len(commits)),
-		Read: JSONRead{Summary: b.String(), Events: src.events, Files: nonNilMap(maps.Clone(src.files)),
-			Oldest: TimeOrNull(src.oldest), Duplicates: src.dupes, Unreadable: src.bad, Unread: nonNil(src.missing)}}
+	out := JSONReport{Schema: JSONSchema, Commits: make([]JSONCommit, 0, len(commits)), Read: readJSON(src)}
 	for _, e := range commits {
 		out.Commits = append(out.Commits, ToJSON(e))
 	}
 	return out
+}
+
+// readJSON is what src read, as livy.why/1 reports it.
+func readJSON(src *sources) JSONRead {
+	var b strings.Builder
+	writeSources(&b, src)
+	return JSONRead{Summary: b.String(), Events: src.events, Files: nonNilMap(maps.Clone(src.files)),
+		Oldest: TimeOrNull(src.oldest), Duplicates: src.dupes, Unreadable: src.bad, Unread: nonNil(src.missing)}
 }
 
 // ToJSON is one explained commit in its JSON form.

@@ -103,3 +103,7 @@ func (p *pass) prune() {
 		p.say("could not prune %d kept segment(s) past %s", failed, KeepUploadedKey)
 	}
 }
+
+// KeepUploaded is how long shipped segments are kept, and why the setting could not be used
+// ("" when it could).
+func KeepUploaded() (time.Duration, string) { return keepUploaded() }

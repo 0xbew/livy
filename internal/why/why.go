@@ -61,6 +61,12 @@ type Event struct {
 	OutputTokens        int64  `json:"output_tokens"`
 	CacheReadTokens     int64  `json:"cache_read_input_tokens"`
 	CacheCreationTokens int64  `json:"cache_creation_input_tokens"`
+	// A skill.loaded line's skill, as `livy pr` lists the skills a window loaded.
+	Skill      string `json:"skill"`
+	Scope      string `json:"scope"`
+	Trigger    string `json:"trigger"`
+	SHA256     string `json:"sha256"`
+	TreeSHA256 string `json:"tree_sha256"`
 }
 
 // Report is what why says about one commit.
@@ -562,12 +568,24 @@ func newestTicket(events []Event, in func(int) bool) string {
 // with fractions, so their text does not sort. Equal instants keep the order given, which is
 // the ledger's order of writing.
 func byInstant(events []Event) []Event {
-	out := slices.Clone(events)
-	slices.SortStableFunc(out, func(a, b Event) int {
-		ta, _ := parseTS(a.TS)
-		tb, _ := parseTS(b.TS)
-		return ta.Compare(tb)
+	// Each time is parsed once and indexes are sorted, not the events: an Event is large, and a
+	// PR's sessions can hold a hundred thousand of them.
+	at := make([]time.Time, len(events))
+	order := make([]int, len(events))
+	for i := range events {
+		at[i], _ = parseTS(events[i].TS)
+		order[i] = i
+	}
+	slices.SortFunc(order, func(a, b int) int {
+		if c := at[a].Compare(at[b]); c != 0 {
+			return c
+		}
+		return a - b
 	})
+	out := make([]Event, len(events))
+	for i, j := range order {
+		out[i] = events[j]
+	}
 	return out
 }
 

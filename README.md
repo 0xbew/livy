@@ -335,6 +335,30 @@ the text report's: 1 when `read.unread` names something that could not be read.
   `prompt_ids` and `agent_brief_ids`.
   `--top N` sets how many spans `longest` lists. The span tree is in the text report only.
 
+## One pull request, fast (`livy pr`, `livy reindex`)
+
+```sh
+livy pr --json --repo OWNER/NAME --branch B --commits SHA,SHA   # run in the repo's clone
+livy pr --json --repo OWNER/NAME --branch B                     # the commits recorded on B
+livy reindex                                                     # build or rebuild the index
+```
+
+`livy pr --json` writes one `livy.pr/1` document for a pull request's commits: `why` (a
+`livy.why/1` document), `profile` (a `livy.profile/1` document; `--top N` as there), `skills[]` (each
+`skill.loaded` line inside a commit's window: `ts`, `session_id`, `agent_id`, `skill`, `scope`,
+`trigger`, `sha256`, `tree_sha256`, and the `commits` whose windows hold it), and `source`. It reads
+only the lines the commits need from Livy's local index, so its cost follows the pull request,
+not the machine's history; the answer is the one `livy why` and `livy profile` give, except that
+it never looks a commit up as a squash merge on GitHub (`squash` is always null).
+
+The index (`index/` in the data folder) keeps each ledger line and span a second time, in small
+files keyed by session, by repo and branch, and by commit sha. Every hook, extraction and the OTEL
+receiver add to it as they write; the daily job builds it when it is missing and prunes files
+older than `emit.keep_uploaded_days`. `livy reindex` rebuilds it from the ledger, segments and the
+OTEL stream. With no usable index, `livy pr` reads everything, as `livy why` does, and
+`source.kind` is `scan` with the reason; `--scan` asks for that. The index holds the same lines as
+the files it is built from, with the same permissions; `livy uninstall --purge` deletes it.
+
 ## An evidence pack for an incident (`livy incident`)
 
 ```sh

@@ -22,6 +22,7 @@ import (
 	"github.com/0xbew/livy/internal/hook"
 	"github.com/0xbew/livy/internal/incident"
 	"github.com/0xbew/livy/internal/install"
+	"github.com/0xbew/livy/internal/pr"
 	"github.com/0xbew/livy/internal/profile"
 	"github.com/0xbew/livy/internal/prompts"
 	"github.com/0xbew/livy/internal/relay"
@@ -90,6 +91,7 @@ func runEmit(ctx context.Context, args []string) int {
 	rest := doctorStatus(ctx, args)
 	if isDaily(args) {
 		emit.DailyDrain(ctx, os.Stderr, sinkFor)
+		pr.Daily(os.Stderr)
 	}
 	return emit.Run(ctx, rest, os.Stdin, os.Stderr, sinkFor)
 }
@@ -187,7 +189,7 @@ func dispatch(args []string) int {
 // The usage line, either side of the old recorder's subcommands.
 const (
 	usageHead = "usage: livy <subcommand> [args]: hook <event> | hook --selftest | amp <event> | spotcheck [--selftest] | git post-checkout <prev> <new> <flag> | git prepare-commit-msg <file> [source] [sha] | git post-commit | git post-rewrite amend|rebase | emit [--extract] [--throttle S] [--event NAME] [--dry-run] [--doctor-status P] | drain | install [--refresh-denylist] | uninstall | doctor [--json] [--status-file P]"
-	usageTail = " | prompts [--upload on|off] [--backfill-days N] [--dry-run] | why [--data DIR] <sha|A..B> | profile [--top N] [--all] [--data DIR] <sha|A..B> | show --prompt <id> | --commit <sha> | incident <id> --range A..B [--data DIR] [--out FILE] [--excerpts] | vault backfill [--days N] | relay (--collector URL [--headers-command CMD] | --sink) --listen 127.0.0.1:PORT | version"
+	usageTail = " | prompts [--upload on|off] [--backfill-days N] [--dry-run] | why [--data DIR] <sha|A..B> | profile [--top N] [--all] [--data DIR] <sha|A..B> | pr --json --repo O/N --branch B [--commits SHA,...] [--top N] [--scan] | reindex | show --prompt <id> | --commit <sha> | incident <id> --range A..B [--data DIR] [--out FILE] [--excerpts] | vault backfill [--days N] | relay (--collector URL [--headers-command CMD] | --sink) --listen 127.0.0.1:PORT | version"
 )
 
 // oldRecorderCommands are the subcommands that run beside or take over from the Python
@@ -223,6 +225,10 @@ func machineCommand(args []string) int {
 		return why.Main(args[1:], os.Stdout, os.Stderr)
 	case len(args) >= 1 && args[0] == "profile":
 		return profile.Main(args[1:], os.Stdout, os.Stderr)
+	case len(args) >= 1 && args[0] == "pr":
+		return pr.Main(args[1:], os.Stdout, os.Stderr)
+	case len(args) >= 1 && args[0] == "reindex":
+		return pr.ReindexMain(args[1:], os.Stdout, os.Stderr)
 	case len(args) >= 1 && args[0] == "show":
 		return show.Main(args[1:], os.Stdout, os.Stderr)
 	case len(args) >= 1 && args[0] == "incident":

@@ -15,6 +15,7 @@ import (
 
 	"github.com/0xbew/livy/internal/clock"
 	"github.com/0xbew/livy/internal/event"
+	"github.com/0xbew/livy/internal/keyspace"
 	"github.com/0xbew/livy/internal/ledger"
 	"github.com/0xbew/livy/internal/ledgerjson"
 	"github.com/0xbew/livy/internal/plainname"
@@ -209,6 +210,9 @@ func (w *Writer) Write(lines []map[string]any) bool {
 	if err != nil && !errors.Is(err, ledger.ErrClose) {
 		w.Failed += n
 		return false
+	}
+	if err := keyspace.AddLedger(w.Dir, buf); err != nil {
+		fmt.Fprintln(w.Stderr, err) // the lines are in the ledger; `livy reindex` picks them up
 	}
 	w.Written += n
 	if done.Unchecked != nil {

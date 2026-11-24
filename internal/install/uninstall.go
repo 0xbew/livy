@@ -90,6 +90,7 @@ func (u *uninstallRun) claudeSettings() {
 	stripHooks(settings)
 	unsetOwned(settings, "env", st.Env)
 	dropHelper(settings, st.HeadersHelper)
+	unsetKeyHeaders(settings, st.RelayKeyEnv)
 	if string(before) == string(encode(settings)) {
 		return
 	}

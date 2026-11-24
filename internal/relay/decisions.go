@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0xbew/livy/internal/keyspace"
 	"github.com/0xbew/livy/internal/ledger"
 )
 
@@ -133,23 +134,21 @@ func keepDecisions(dataDir string, ds []decision, now time.Time) (unchecked, err
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("decisions: %w", err)
 	}
-	return appendFile(filepath.Join(dir, now.UTC().Format(decisionDay)+".jsonl"), lines)
+	unchecked, err = appendFile(filepath.Join(dir, now.UTC().Format(decisionDay)+".jsonl"), lines)
+	if err == nil {
+		// The decisions are kept either way; an index write that fails leaves index/stale, which
+		// every reader of the index reports.
+		_ = keyspace.AddLedger(dataDir, lines)
+	}
+	return unchecked, err
 }
 
 func appendFile(path string, b []byte) (unchecked, err error) {
-	t, err := ledger.OpenTail(path)
+	unchecked, err = ledger.AppendFile(path, b)
 	if err != nil {
-		return nil, fmt.Errorf("decisions: %w", err)
+		return unchecked, fmt.Errorf("decisions: %w", err)
 	}
-	defer func() {
-		if cerr := t.File.Close(); err == nil && cerr != nil {
-			err = fmt.Errorf("decisions: %w", cerr)
-		}
-	}()
-	if _, err := t.File.Write(t.Lead(b)); err != nil {
-		return nil, fmt.Errorf("decisions: %w", err)
-	}
-	return t.Unchecked, nil
+	return unchecked, nil
 }
 
 // PruneDecisions deletes kept decision days older than DecisionKeepDays.

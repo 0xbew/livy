@@ -372,28 +372,137 @@ func readFile(src *sources, label, path string) ([]Event, error) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64*1024), maxLine)
 	for sc.Scan() {
-		sum := sha256.Sum256(sc.Bytes())
-		if src.seen[sum] {
-			src.dupes++
-			continue
+		if e, ok := src.add(sc.Bytes()); ok {
+			out = append(out, e)
 		}
-		src.seen[sum] = true
-		var e Event
-		if json.Unmarshal(sc.Bytes(), &e) != nil {
-			src.bad++
-			continue
-		}
-		if t, ok := parseTS(e.TS); ok && (src.oldest.IsZero() || t.Before(src.oldest)) {
-			src.oldest = t
-		}
-		src.events++
-		out = append(out, e)
 	}
 	if sc.Err() != nil {
 		src.bad++
 	}
 	return out, nil
 }
+
+// add decodes one ledger line, counting it in src; false for a line read before or unreadable.
+func (src *sources) add(line []byte) (Event, bool) {
+	d := decode(line)
+	return src.take(d)
+}
+
+// Decoded is one ledger line read ahead of being collected: its hash, and its event when it is
+// a ledger line.
+type Decoded struct {
+	sum [sha256.Size]byte
+	e   Event
+	ok  bool
+}
+
+func decode(line []byte) Decoded {
+	d := Decoded{sum: sha256.Sum256(line)}
+	d.ok = json.Unmarshal(line, &d.e) == nil
+	return d
+}
+
+// take counts one decoded line in src; false for a line read before or unreadable.
+func (src *sources) take(d Decoded) (Event, bool) {
+	if src.seen[d.sum] {
+		src.dupes++
+		return Event{}, false
+	}
+	src.seen[d.sum] = true
+	if !d.ok {
+		src.bad++
+		return Event{}, false
+	}
+	if t, ok := parseTS(d.e.TS); ok && (src.oldest.IsZero() || t.Before(src.oldest)) {
+		src.oldest = t
+	}
+	src.events++
+	return d.e, true
+}
+
+// Collector gathers ledger lines as why's own reading does: each line decoded, a line read
+// twice counted once, the files and lines that could not be read counted.
+type Collector struct {
+	src    *sources
+	events []Event
+}
+
+// NewCollector is an empty Collector.
+func NewCollector() *Collector {
+	return &Collector{src: &sources{files: map[string]int{}, seen: map[[sha256.Size]byte]bool{}}}
+}
+
+// File adds the lines of one ledger file (gzipped when its name ends in .gz), as source label.
+// A file that does not exist adds nothing; one that cannot be opened is an error.
+func (c *Collector) File(label, path string) error {
+	evs, err := readFile(c.src, label, path)
+	c.events = append(c.events, evs...)
+	if err != nil {
+		c.src.bad++
+	}
+	return err
+}
+
+// Lines adds lines already read (without newlines) from one file of source label.
+func (c *Collector) Lines(label string, lines [][]byte) { c.Add(label, DecodeLines(lines)) }
+
+// Add adds lines DecodeLines read, from one file of source label.
+func (c *Collector) Add(label string, lines []Decoded) {
+	c.src.files[label]++
+	for _, d := range lines {
+		if e, ok := c.src.take(d); ok {
+			c.events = append(c.events, e)
+		}
+	}
+}
+
+// Event is the line's event; false when it is not a ledger line.
+func (d Decoded) Event() (Event, bool) { return d.e, d.ok }
+
+// decodeWorkers is how many goroutines decode a long run of lines; decodeChunk the fewest lines
+// worth handing to one.
+const (
+	decodeWorkers = 8
+	decodeChunk   = 4096
+)
+
+// DecodeLines decodes ledger lines in order, a long run split across decodeWorkers goroutines: one
+// session's file can hold a hundred thousand lines.
+func DecodeLines(lines [][]byte) []Decoded {
+	out := make([]Decoded, len(lines))
+	step := max(decodeChunk, (len(lines)+decodeWorkers-1)/decodeWorkers)
+	var wg sync.WaitGroup
+	for from := 0; from < len(lines); from += step {
+		to := min(from+step, len(lines))
+		wg.Go(func() {
+			for i := from; i < to; i++ {
+				out[i] = decode(lines[i])
+			}
+		})
+	}
+	wg.Wait()
+	return out
+}
+
+// Unread records a source that exists but could not be read.
+func (c *Collector) Unread(label string) { c.src.missing = append(c.src.missing, label) }
+
+// Events is every distinct line added, in the order added.
+func (c *Collector) Events() []Event { return c.events }
+
+// Read is what was read, as livy.why/1 reports it.
+func (c *Collector) Read() JSONRead { return readJSON(c.src) }
+
+// LoadLocal reads every ledger line still on this machine, as `livy why` does with no --data,
+// and what was read.
+func LoadLocal() ([]Event, JSONRead) {
+	events, src := load(nil)
+	return events, readJSON(src)
+}
+
+// CommitFacts is what git says about one commit, as why reads it: trailers, time, parents and
+// the first-parent line before it.
+func CommitFacts(sha string) (Commit, error) { return commitFacts(sha) }
 
 // view is how much of a report is printed.
 type view struct{ all, perPrompt bool }

@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -33,7 +34,8 @@ func runWithEmptyHome(m *testing.M) int {
 }
 
 // Guards: Livy's receiver storing an export unredacted (identity reaching the bucket), a
-// protobuf export accepted and lost without a word (Livy can only redact OTLP/JSON), an empty
+// protobuf export refused, which kept every Claude Code span off a machine whose managed settings
+// pin http/protobuf (#225), a malformed one stored or lost without a word, an empty
 // probe written as data, and the size cap dropping exports silently.
 func TestSinkStoresOnlyRedactedOTLPJSON(t *testing.T) {
 	dir := t.TempDir()
@@ -42,6 +44,7 @@ func TestSinkStoresOnlyRedactedOTLPJSON(t *testing.T) {
 		`{"key":"user.email","value":{"stringValue":"eng@example.com"}}]},"scopeLogs":[{"logRecords":[{"attributes":[` +
 		`{"key":"event.name","value":{"stringValue":"api_request"}},{"key":"prompt","value":{"stringValue":"secret plans"}}]}]}]}]}`
 	json := http.Header{"Content-Type": {"application/json"}}
+	protobuf := http.Header{"Content-Type": {"application/x-protobuf"}}
 	for _, c := range []struct {
 		name         string
 		body         string
@@ -50,7 +53,8 @@ func TestSinkStoresOnlyRedactedOTLPJSON(t *testing.T) {
 		stored, prob bool
 	}{
 		{"an export", export, json, 200, true, false},
-		{"protobuf", "\x0a\x00", http.Header{"Content-Type": {"application/x-protobuf"}}, 415, false, true},
+		{"the same export as protobuf", protobufOf(), protobuf, 200, true, false},
+		{"truncated protobuf", "\x0a\x05\x0a", protobuf, 400, false, true},
 		{"an empty probe", `{"resourceLogs":[]}`, json, 200, false, false},
 		{"not JSON", "{", json, 400, false, true},
 	} {
@@ -59,15 +63,41 @@ func TestSinkStoresOnlyRedactedOTLPJSON(t *testing.T) {
 			t.Errorf("%s: HTTP %d stored %v problem %q; want HTTP %d stored %v problem %v", c.name, status, stored, problem, c.status, c.stored, c.prob)
 		}
 	}
-	line, _ := os.ReadFile(filepath.Join(dir, "ledger.jsonl"))
-	if strings.Count(string(line), "\n") != 1 || strings.Contains(string(line), "eng@example.com") ||
-		strings.Contains(string(line), "secret plans") || !strings.Contains(string(line), "api_request") {
-		t.Errorf("stored stream:\n%s", line)
+	stream, _ := os.ReadFile(filepath.Join(dir, "ledger.jsonl"))
+	lines := strings.Split(strings.TrimSuffix(string(stream), "\n"), "\n")
+	if len(lines) != 2 || strings.Contains(string(stream), "eng@example.com") ||
+		strings.Contains(string(stream), "secret plans") || !strings.Contains(lines[0], "api_request") ||
+		otlpOf(t, lines[0]) != otlpOf(t, lines[1]) {
+		t.Errorf("stored stream (want the JSON and the protobuf export stored alike, redacted):\n%s", stream)
 	}
-	s.MaxBytes = int64(len(line)) + 10
+	s.MaxBytes = int64(len(stream)) + 10
 	if status, _, _, stored, dropped, problem := s.Write(LogsPath, []byte(export), json); status == 200 || stored || !dropped || problem == "" {
 		t.Errorf("over the cap: HTTP %d stored %v dropped %v problem %q; want refused, dropped and said", status, stored, dropped, problem)
 	}
+}
+
+// protobufOf is the export above in OTLP protobuf, written field by field from
+// opentelemetry-proto's logs messages: what Claude Code sends when managed settings set
+// OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf.
+func protobufOf() string {
+	ld := func(field byte, b string) string { return string([]byte{field<<3 | 2, byte(len(b))}) + b }
+	kv := func(k, v string) string { return ld(1, k) + ld(2, ld(1, v)) }
+	resource := ld(1, kv("service.name", "claude-code")) + ld(1, kv("user.email", "eng@example.com"))
+	record := ld(6, kv("event.name", "api_request")) + ld(6, kv("prompt", "secret plans"))
+	return ld(1, ld(1, resource)+ld(2, ld(2, record)))
+}
+
+// otlpOf is a stored line's otlp document, re-encoded so two lines compare by content.
+func otlpOf(t *testing.T, line string) string {
+	t.Helper()
+	var l struct {
+		OTLP map[string]any `json:"otlp"`
+	}
+	if err := json.Unmarshal([]byte(line), &l); err != nil {
+		t.Fatalf("stored line %q: %v", line, err)
+	}
+	b, _ := json.Marshal(l.OTLP)
+	return string(b)
 }
 
 // Guards: an approval or refusal Claude Code made (OTEL's tool_decision, the only record of an

@@ -7,19 +7,14 @@
 package profile
 
 import (
-	"bufio"
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
-	"time"
-)
 
-// maxLine is the longest otel stream line read: one export can hold many spans.
-const maxLine = 64 << 20
+	"github.com/0xbew/livy/internal/otelspan"
+)
 
 // Kind is what a span stands for in a profile.
 type Kind int
@@ -35,12 +30,7 @@ const (
 
 // Span is one stored OTEL span, with only its string and boolean attributes (a boolean as
 // "true" or "false").
-type Span struct {
-	Trace, ID, Parent string
-	Name              string
-	Start, End        time.Time
-	Attrs             map[string]string
-}
+type Span otelspan.Span
 
 // Kind is what the span stands for, by Claude Code's and Codex's span names.
 func (s Span) Kind() Kind {
@@ -102,88 +92,15 @@ func orUnknown(v string) string {
 	return v
 }
 
-// otlpLine is one line of the otel stream: one export as the receiver stored it.
-type otlpLine struct {
-	Signal string `json:"signal"`
-	OTLP   struct {
-		ResourceSpans []struct {
-			ScopeSpans []struct {
-				Spans []otlpSpan `json:"spans"`
-			} `json:"scopeSpans"`
-		} `json:"resourceSpans"`
-	} `json:"otlp"`
-}
-
-type otlpSpan struct {
-	TraceID      string     `json:"traceId"`
-	SpanID       string     `json:"spanId"`
-	ParentSpanID string     `json:"parentSpanId"`
-	Name         string     `json:"name"`
-	Start        nanos      `json:"startTimeUnixNano"`
-	End          nanos      `json:"endTimeUnixNano"`
-	Attributes   []otlpAttr `json:"attributes"`
-}
-
-type otlpAttr struct {
-	Key   string `json:"key"`
-	Value struct {
-		String *string `json:"stringValue"`
-		Bool   *bool   `json:"boolValue"`
-	} `json:"value"`
-}
-
-// nanos is an OTLP/JSON time: a decimal string of nanoseconds since the epoch (or a number).
-type nanos int64
-
-func (n *nanos) UnmarshalJSON(b []byte) error {
-	v, err := strconv.ParseInt(strings.Trim(string(b), `"`), 10, 64)
-	if err != nil {
-		return fmt.Errorf("unix nanoseconds %s: %w", b, err)
-	}
-	*n = nanos(v)
-	return nil
-}
-
 // ReadSpans reads the trace spans in r, one otel stream line each; other signals' lines are
 // skipped. bad counts the lines that could not be read.
 func ReadSpans(r io.Reader) (spans []Span, bad int, err error) {
-	sc := bufio.NewScanner(r)
-	sc.Buffer(make([]byte, 64*1024), maxLine)
-	for sc.Scan() {
-		var l otlpLine
-		if json.Unmarshal(sc.Bytes(), &l) != nil {
-			bad++
-			continue
-		}
-		if l.Signal != "traces" {
-			continue
-		}
-		for _, rs := range l.OTLP.ResourceSpans {
-			for _, ss := range rs.ScopeSpans {
-				for _, s := range ss.Spans {
-					spans = append(spans, s.span())
-				}
-			}
-		}
+	got, bad, err := otelspan.Read(r)
+	spans = make([]Span, 0, len(got))
+	for _, s := range got {
+		spans = append(spans, Span(s))
 	}
-	if err := sc.Err(); err != nil {
-		return spans, bad, fmt.Errorf("read otel stream: %w", err)
-	}
-	return spans, bad, nil
-}
-
-func (s otlpSpan) span() Span {
-	attrs := make(map[string]string, len(s.Attributes))
-	for _, a := range s.Attributes {
-		switch {
-		case a.Value.String != nil:
-			attrs[a.Key] = *a.Value.String
-		case a.Value.Bool != nil:
-			attrs[a.Key] = strconv.FormatBool(*a.Value.Bool)
-		}
-	}
-	return Span{Trace: s.TraceID, ID: s.SpanID, Parent: s.ParentSpanID, Name: s.Name,
-		Start: time.Unix(0, int64(s.Start)).UTC(), End: time.Unix(0, int64(s.End)).UTC(), Attrs: attrs}
+	return spans, bad, err
 }
 
 // ReadSpansFile reads one otel stream file, gzipped when its name ends in .gz.

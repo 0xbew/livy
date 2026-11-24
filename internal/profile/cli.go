@@ -43,8 +43,7 @@ func Main(args []string, stdout, stderr io.Writer) int {
 	}
 	spans, read := loadSpans(o.data)
 	if o.json {
-		b := &jsonBuilder{spans: spans, events: r.Events, top: o.top, agentTypes: agentTypesOf(r.Events)}
-		return writeJSON(b, r, read, stdout, stderr)
+		return writeJSON(Report(r.Commits, r.Events, spans, o.top), r, read, stdout, stderr)
 	}
 	rep := report{w: stdout, spans: spans, events: r.Events, top: o.top, all: o.all}
 	for _, e := range r.Commits {
@@ -86,12 +85,7 @@ func parse(args []string, stderr io.Writer) (options, bool) {
 
 // writeJSON writes the range's profile as one JSON document and returns the exit status, as
 // Main does for text.
-func writeJSON(b *jsonBuilder, r why.Range, read spanSources, stdout, stderr io.Writer) int {
-	out := JSONReport{Schema: JSONSchema, Commits: make([]JSONCommit, 0, len(r.Commits))}
-	for _, e := range r.Commits {
-		out.Commits = append(out.Commits, b.commit(e))
-	}
-	out.Totals = b.totals
+func writeJSON(out JSONReport, r why.Range, read spanSources, stdout, stderr io.Writer) int {
 	out.Read = JSONRead{Summary: r.Sources, Spans: read.spans, SpanFiles: read.files, Bad: read.bad,
 		Unread: append(append([]string{}, r.Unread...), read.missing...)}
 	if err := why.WriteJSON(stdout, out); err != nil {
@@ -102,6 +96,25 @@ func writeJSON(b *jsonBuilder, r why.Range, read spanSources, stdout, stderr io.
 		return 1
 	}
 	return 0
+}
+
+// Report is the livy.profile/1 document for commits from the ledger events and spans they were
+// explained from, every span listed down to top per window; its Read is the caller's to fill.
+func Report(commits []why.Explained, events []why.Event, spans []Span, top int) JSONReport {
+	b := &jsonBuilder{spans: spans, events: events, top: top, agentTypes: agentTypesOf(events)}
+	out := JSONReport{Schema: JSONSchema, Commits: make([]JSONCommit, 0, len(commits))}
+	for _, e := range commits {
+		out.Commits = append(out.Commits, b.commit(e))
+	}
+	out.Totals = b.totals
+	return out
+}
+
+// LoadLocalSpans reads every span still on this machine, as `livy profile` does with no --data,
+// and what was read: files and spans, unreadable lines, and folders that could not be read.
+func LoadLocalSpans() ([]Span, JSONRead) {
+	spans, src := loadSpans(nil)
+	return spans, JSONRead{Spans: src.spans, SpanFiles: src.files, Bad: src.bad, Unread: append([]string{}, src.missing...)}
 }
 
 type multi []string

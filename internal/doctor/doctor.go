@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0xbew/livy/internal/ccpolicy"
 	"github.com/0xbew/livy/internal/clock"
 	"github.com/0xbew/livy/internal/config"
 	"github.com/0xbew/livy/internal/emit"
@@ -100,7 +101,8 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	err := checkSink(ctx, &r, sinkFor, dir)
 
 	checkClaudeVersions(ctx, &r, hook.Home())
-	checkHooks(&r)
+	managed := readManaged(&r, ccpolicy.Dir())
+	checkHooks(&r, managed)
 	checkSchedule(ctx, &r)
 	checkRepo(ctx, &r)
 	checkHookRedirects(&r)
@@ -115,7 +117,7 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	}
 	held := otelHeld(&r, res)
 	if !held {
-		checkOtel(ctx, &r)
+		checkOtel(ctx, &r, managed)
 		checkCodexOtel(ctx, &r)
 	}
 	checkCodexHooks(&r)
@@ -259,7 +261,7 @@ func livyHooks(groups map[string][]hookGroup, required, mustMatch map[string]str
 	return missing, bins
 }
 
-func checkHooks(r *Report) {
+func checkHooks(r *Report, managed ccpolicy.Settings) {
 	st, settingsPath := install.Recorded()
 	raw, err := os.ReadFile(settingsPath)
 	if err != nil {
@@ -267,12 +269,14 @@ func checkHooks(r *Report) {
 		return
 	}
 	var doc struct {
-		Hooks map[string][]hookGroup `json:"hooks"`
+		Hooks   map[string][]hookGroup `json:"hooks"`
+		NoHooks bool                   `json:"disableAllHooks"`
 	}
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		r.add(Fail, "hooks", "%s is not the settings shape Livy reads (%v)", settingsPath, err)
 		return
 	}
+	checkManagedHooks(r, managed, doc.NoHooks)
 	missing, bins := livyHooks(doc.Hooks, required, mustMatch)
 	if len(missing) > 0 {
 		r.add(Fail, "hooks", "no Livy hook for %s in %s; run `livy install`", strings.Join(missing, ", "), settingsPath)
@@ -731,7 +735,7 @@ func otelHeld(r *Report, res config.Resolved) bool {
 // checkOtel: OTEL export is optional. Configured, it must be content-free and accepted: the
 // header helper is run, as Claude Code would run it, and its headers go on an empty export,
 // which proves auth and reachability without writing anything a collector would store.
-func checkOtel(ctx context.Context, r *Report) {
+func checkOtel(ctx context.Context, r *Report, managed ccpolicy.Settings) {
 	st, settingsPath := install.Recorded()
 	raw, _ := os.ReadFile(settingsPath)
 	var doc struct {
@@ -745,7 +749,10 @@ func checkOtel(ctx context.Context, r *Report) {
 		r.add(OK, "otel", "not configured (optional)")
 		return
 	}
-	r.Rows = append(r.Rows, OtelSettingsProblems(doc.Env, os.Getenv)...)
+	if checkManagedOtel(r, managed, st) {
+		return
+	}
+	r.Rows = append(r.Rows, OtelSettingsProblems(effectiveEnv(doc.Env, managed), os.Getenv)...)
 	// The probe carries a credential, so it goes only to the endpoint install set, and only
 	// install's own helper is run: a value someone else wrote is reported, never executed.
 	if installed := st.Env["OTEL_EXPORTER_OTLP_ENDPOINT"]; installed == "" || installed != endpoint || doc.Helper != st.HeadersHelper {
@@ -1033,7 +1040,7 @@ func checkCodexRelay(ctx context.Context, r *Report, st install.State, table []b
 			state.Failed, state.CountingSince, state.LastFailedAt, state.LastFailure)
 	}
 	if t, err := time.Parse(time.RFC3339, state.LastRefusedAt); err == nil && now.Sub(t) < 24*time.Hour {
-		r.add(Warn, "codex otel relay", "%d request(s) refused for a missing or wrong relay key since %s, the last at %s: a Codex process started before the key (restart it), or another local process",
+		r.add(Warn, "codex otel relay", "%d request(s) refused for a missing or wrong relay key since %s, the last at %s: a Codex process started before the key (restart it), Claude Code exporting with headers that are not Livy's (see the otel managed settings rows), or another local process",
 			state.Refused, state.CountingSince, state.LastRefusedAt)
 	}
 	since, err := time.Parse(time.RFC3339, st.CodexRelaySince)

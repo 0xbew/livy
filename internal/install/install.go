@@ -25,6 +25,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/0xbew/livy/internal/amp"
+	"github.com/0xbew/livy/internal/ccpolicy"
 	"github.com/0xbew/livy/internal/clock"
 	"github.com/0xbew/livy/internal/config"
 	"github.com/0xbew/livy/internal/denylist"
@@ -36,6 +37,7 @@ import (
 	"github.com/0xbew/livy/internal/githook"
 	"github.com/0xbew/livy/internal/gitinfo"
 	"github.com/0xbew/livy/internal/hook"
+	"github.com/0xbew/livy/internal/keyspace"
 	"github.com/0xbew/livy/internal/ledger"
 	"github.com/0xbew/livy/internal/otelignore"
 	"github.com/0xbew/livy/internal/prompts"
@@ -72,6 +74,10 @@ type State struct {
 	// created it, so uninstall removes a file left holding nothing.
 	CodexHooks        string `json:"codex_hooks,omitempty"`
 	CreatedCodexHooks bool   `json:"created_codex_hooks,omitempty"`
+
+	// RelayKeyEnv are the per-signal OTLP headers keys install set to the relay key (only with
+	// --otel-around-managed): their names, never the key.
+	RelayKeyEnv []string `json:"relay_key_env,omitempty"`
 }
 
 type listFlag []string
@@ -94,6 +100,7 @@ type options struct {
 	otelAuth                           string
 	otelLogs, otelMetrics, otelTraces  string
 	noCodexOtel                        bool
+	aroundManaged                      bool // --otel-around-managed: per-signal keys past Claude Code's managed settings
 	noAmp                              bool // --no-amp: no Amp plugin (removes ours)
 	noTrailers                         bool // --no-trailers: trailers.enabled=false, and no prepare-commit-msg hook
 	otelTo                             string
@@ -203,6 +210,9 @@ func installFlags(fl *flag.FlagSet, o *options) {
 	fl.StringVar(&o.handle, "handle", "", "your handle, written to the user config (names your objects)")
 	fl.StringVar(&o.profile, "config", "", "a JSON profile merged into the user config (orgs, sink, identity)")
 	fl.BoolVar(&o.noCodexOtel, "no-codex-otel", false, "do not export Codex telemetry, even with --otel (removes ours)")
+	fl.BoolVar(&o.aroundManaged, "otel-around-managed", false,
+		"when Claude Code's managed settings override Livy's OTEL route, write the per-signal traces and logs endpoints "+
+			"and relay-key headers they leave unset (the relay key is then in Claude Code's settings.json)")
 	fl.BoolVar(&o.noAmp, "no-amp", false, "do not record Amp: no plugin in ~/.config/amp/plugins (removes ours)")
 	fl.BoolVar(&o.noSchedule, "no-schedule", false, "do not install the daily flush")
 	fl.BoolVar(&o.noTrailers, "no-trailers", false,
@@ -227,6 +237,17 @@ func installFlags(fl *flag.FlagSet, o *options) {
 // otelDestination settles --otel-to into the endpoint: Livy's own receiver for sink, else
 // the collector named, which --otel may repeat but not contradict.
 func otelDestination(o *options) error {
+	if err := settleDestination(o); err != nil {
+		return err
+	}
+	if o.aroundManaged && !o.sinkMode {
+		return errors.New("--otel-around-managed routes to Livy's own receiver; it needs --otel-to sink")
+	}
+	return nil
+}
+
+// settleDestination is otelDestination before the flags that depend on where OTEL goes.
+func settleDestination(o *options) error {
 	if o.otelTo == otelNone {
 		if o.otel != "" || o.otelAuth != "" || o.otelHeaderEnv != "" {
 			return errors.New("--otel-to none turns OTEL off; it takes no --otel, --otel-auth or --otel-header-env")
@@ -255,6 +276,7 @@ func otelFlags(name string, o *options) error {
 	if err := otelDestination(o); err != nil {
 		return err
 	}
+
 	if o.otel != "" && !o.sinkMode {
 		u, err := url.Parse(o.otel)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
@@ -284,6 +306,7 @@ func otelFlags(name string, o *options) error {
 // paths install works with.
 type paths struct {
 	home, userDir, bin, statePath, settings, codex string
+	managed                                        string // Claude Code's managed settings folder
 }
 
 func where() paths {
@@ -299,7 +322,7 @@ func where() paths {
 	}
 	return paths{home: home, userDir: userDir, bin: filepath.Join(home, ".livy", "bin", "livy"),
 		statePath: filepath.Join(userDir, "install.json"), settings: filepath.Join(claude, "settings.json"),
-		codex: filepath.Join(codex, "config.toml")}
+		codex: filepath.Join(codex, "config.toml"), managed: ccpolicy.Dir()}
 }
 
 // Install is `livy install [flags]`: 0 when every part is in place, 1 when a part failed
@@ -499,11 +522,12 @@ func (r *installRun) claudeCode() {
 	}
 	switch {
 	case r.o.otel != "":
-		r.claudeOtel(settings, &next)
-	case r.prev.Env != nil || r.prev.HeadersHelper != "":
+		r.claudeOtelUnderPolicy(settings, &next)
+	case r.prev.Env != nil || r.prev.HeadersHelper != "" || len(r.prev.RelayKeyEnv) > 0:
 		unsetOwned(settings, "env", r.prev.Env) // OTEL was on and is not asked for now
 		dropHelper(settings, r.prev.HeadersHelper)
-		next.Env, next.HeadersHelper = nil, ""
+		unsetKeyHeaders(settings, r.prev.RelayKeyEnv)
+		next.Env, next.HeadersHelper, next.RelayKeyEnv = nil, "", nil
 	}
 	next.CreatedSettings = created || r.prev.CreatedSettings
 	switch {
@@ -523,8 +547,9 @@ func (r *installRun) claudeCode() {
 }
 
 // claudeOtel sets the OTEL env keys and headers helper install owns, and drops the ones it
-// owned before and no longer wants.
-func (r *installRun) claudeOtel(settings *object, next *State) {
+// owned before and no longer wants. Under managed settings (m not nil) it leaves alone every
+// key they set: those win in Claude Code whatever the user settings hold.
+func (r *installRun) claudeOtel(settings *object, next *State, m *ccpolicy.Settings) {
 	want := otelEnv(r.o, handleFor(r.o))
 	stale := map[string]string{}
 	for k, v := range r.prev.Env {
@@ -532,12 +557,33 @@ func (r *installRun) claudeOtel(settings *object, next *State) {
 			stale[k] = v
 		}
 	}
+	if m != nil {
+		for k := range m.Env {
+			delete(want, k)
+			delete(stale, k)
+		}
+	}
 	unsetOwned(settings, "env", stale)
 	env, skipped := setOwned(settings, "env", want, r.prev.Env)
+	if m != nil {
+		for k := range m.Env {
+			if v, owned := r.prev.Env[k]; owned {
+				env[k] = v // left alone, still install's to remove
+			}
+		}
+	}
 	next.Env = env
 	for _, s := range skipped {
 		r.say("otel: %s left alone", s)
 	}
+	if m != nil && m.Helper != "" {
+		return
+	}
+	r.claudeHelper(settings, next)
+}
+
+// claudeHelper sets or removes the otelHeadersHelper install owns.
+func (r *installRun) claudeHelper(settings *object, next *State) {
 	helper := helperFor(r.p.bin, r.o)
 	cur, has := settings.get("otelHeadersHelper")
 	s, isStr := cur.(string)
@@ -705,7 +751,7 @@ func (r *installRun) schedule() {
 func dataNames() []string {
 	return slices.Concat(ledger.DataNames(), emit.DataNames(), prompts.DataNames(), relay.DataNames(),
 		spotcheck.DataNames(), extract.DataNames(), cli.DataNames(), claudecode.DataNames(),
-		codex.DataNames(), denylist.DataNames(), amp.DataNames(), []string{dogfoodParkDir})
+		codex.DataNames(), denylist.DataNames(), amp.DataNames(), keyspace.DataNames(), []string{dogfoodParkDir})
 }
 
 const (

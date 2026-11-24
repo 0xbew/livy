@@ -385,7 +385,9 @@ func (r *Relay) Handler(port int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, q *http.Request) {
 		status, why := Admit(q, hosts)
 		if status == 0 && (r.Key == "" || subtle.ConstantTimeCompare([]byte(q.Header.Get(KeyHeader)), []byte(r.Key)) != 1) {
-			r.refuse("no relay key, or not this relay's: a Codex process started before the key, or another local process (re-run livy install and restart Codex)")
+			r.refuse("no relay key, or not this relay's: a Codex process started before the key (re-run livy install and restart Codex), " +
+				"Claude Code exporting with headers that are not Livy's (managed settings with their own otelHeadersHelper; see livy doctor), " +
+				"or another local process")
 			status, why = http.StatusForbidden, "relay key missing or wrong"
 		}
 		if status != 0 {
@@ -393,6 +395,9 @@ func (r *Relay) Handler(port int) http.Handler {
 			http.Error(w, why, status)
 			return
 		}
+		// Only what storing or forwarding reads is kept: an exporter may carry another collector's
+		// credentials (a managed otelHeadersHelper's API key), which Livy never stores or logs.
+		q.Header = exportHeaders(q.Header)
 		if r.holds(w) {
 			return
 		}
@@ -417,6 +422,17 @@ func (r *Relay) Handler(port int) http.Handler {
 		w.WriteHeader(code)
 		_, _ = w.Write(payload)
 	})
+}
+
+// exportHeaders is the part of an export's headers the stream and the forward read.
+func exportHeaders(in http.Header) http.Header {
+	out := http.Header{}
+	for _, k := range []string{"Content-Type", "Content-Encoding", otelignore.CwdHeader} {
+		if v := in.Get(k); v != "" {
+			out.Set(k, v)
+		}
+	}
+	return out
 }
 
 // store writes one export to the otel stream, in sink mode, and counts what came of it.

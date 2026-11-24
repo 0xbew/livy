@@ -26,6 +26,7 @@ import (
 	"github.com/0xbew/livy/internal/config"
 	"github.com/0xbew/livy/internal/event"
 	"github.com/0xbew/livy/internal/gitinfo"
+	"github.com/0xbew/livy/internal/keyspace"
 	"github.com/0xbew/livy/internal/ledger"
 	"github.com/0xbew/livy/internal/ledgerjson"
 	"github.com/0xbew/livy/internal/oldnames"
@@ -510,6 +511,9 @@ func (r *run) append(rec map[string]any) bool {
 		fmt.Fprintf(r.stderr, "ledger: %v\n", err)
 	case err != nil:
 		return false
+	}
+	if err := keyspace.AddLedger(filepath.Dir(r.path), append(line, '\n')); err != nil {
+		fmt.Fprintf(r.stderr, "%v\n", err) // the line is in the ledger; `livy reindex` picks it up
 	}
 	if done.Spilled {
 		fmt.Fprintln(r.stderr, "ledger: lock not acquired; line kept in spill/ for the emitter")

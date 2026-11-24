@@ -2,8 +2,14 @@ package install
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
+
+	"github.com/0xbew/livy/internal/ccpolicy"
+	"github.com/0xbew/livy/internal/hook"
+	"github.com/0xbew/livy/internal/relay"
 )
 
 // throttleSeconds is the mid-session upload's minimum gap (contract rule 7).
@@ -272,4 +278,136 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// claudeOtelUnderPolicy sets the OTEL keys install owns, unless Claude Code's managed settings
+// override Livy's route: then it changes no OTEL key and says why, or with --otel-around-managed
+// writes only the per-signal traces and logs keys the managed settings leave unset.
+func (r *installRun) claudeOtelUnderPolicy(settings *object, next *State) {
+	m, err := ccpolicy.Read(r.p.managed)
+	if err != nil {
+		r.say("otel: Claude Code's managed settings could not be read (%v); livy doctor checks them again", err)
+	}
+	var conflict []string
+	for _, o := range m.Overrides() {
+		if o.Breaks {
+			conflict = append(conflict, o.Key)
+		}
+	}
+	if len(conflict) == 0 {
+		if r.o.aroundManaged {
+			r.say("otel: no managed setting overrides Livy's route; --otel-around-managed writes nothing more")
+		}
+		r.claudeOtel(settings, next, nil)
+		unsetKeyHeaders(settings, r.prev.RelayKeyEnv)
+		next.RelayKeyEnv = nil
+		return
+	}
+	r.say("otel: Claude Code's managed settings (%s) set %s, which win over Livy's: Claude Code's OTEL does not reach Livy here (livy doctor says why)",
+		strings.Join(m.Files, ", "), strings.Join(conflict, ", "))
+	if !r.o.aroundManaged {
+		r.say("otel: Claude Code's OTEL settings left as they are; `livy install --otel-around-managed` writes the per-signal keys the managed settings leave unset")
+		return
+	}
+	unset, blocked := m.PerSignal()
+	if blocked != "" {
+		r.fail("otel: no route around the managed settings: %s; nothing written", blocked)
+		return
+	}
+	r.claudeOtel(settings, next, &m)
+	r.keyHeaders(settings, next, unset)
+}
+
+// keyHeaders points each per-signal endpoint in unset at Livy's receiver and sets each
+// per-signal headers key in unset to the relay key, which Claude Code merges with the
+// managed helper's headers.
+func (r *installRun) keyHeaders(settings *object, next *State, unset []string) {
+	want, names := map[string]string{}, []string(nil)
+	for _, k := range unset {
+		sig, isEndpoint := strings.CutSuffix(strings.TrimPrefix(k, "OTEL_EXPORTER_OTLP_"), "_ENDPOINT")
+		if isEndpoint {
+			want[k] = "http://" + RelayListen + "/v1/" + strings.ToLower(sig)
+			continue
+		}
+		names = append(names, k)
+	}
+	key := relay.ReadKey(hook.DataDir())
+	if key == "" {
+		r.fail("otel: no relay key in %s yet, so no per-signal key is written; re-run livy install --otel-around-managed", hook.DataDir())
+		return
+	}
+	env, skipped := setOwned(settings, "env", want, r.prev.Env)
+	maps.Copy(next.Env, env)
+	// The key goes only beside an endpoint install set to Livy's receiver: a signal whose
+	// endpoint holds someone else's value would carry it there.
+	names = slices.DeleteFunc(names, func(k string) bool {
+		_, ours := env[strings.TrimSuffix(k, "_HEADERS")+"_ENDPOINT"]
+		return !ours
+	})
+	// A header an earlier run wrote for a signal it no longer routes.
+	unsetKeyHeaders(settings, slices.DeleteFunc(slices.Clone(r.prev.RelayKeyEnv), func(k string) bool { return slices.Contains(names, k) }))
+	owned, held := setKeyHeaders(settings, names, key)
+	next.RelayKeyEnv = owned
+	for _, s := range append(skipped, held...) {
+		r.say("otel: %s left alone", s)
+	}
+	// An endpoint to Livy whose header holds someone else's value would only be refused.
+	for _, k := range names {
+		if ep := strings.TrimSuffix(k, "_HEADERS") + "_ENDPOINT"; !slices.Contains(owned, k) {
+			unsetOwned(settings, "env", map[string]string{ep: env[ep]})
+			delete(next.Env, ep)
+		}
+	}
+	if len(owned) == 0 {
+		r.fail("otel: no per-signal route written around the managed settings: each signal's keys hold values install did not set")
+		return
+	}
+	r.say("otel: per-signal relay-key headers written around the managed settings: %s (the relay key is now in %s; "+
+		"Claude Code versions that guard a managed headers helper drop these endpoints too)", strings.Join(owned, ", "), r.p.settings)
+}
+
+// keyHeaderValue is an OTLP headers value carrying the relay key.
+func keyHeaderValue(key string) string { return relay.KeyHeader + "=" + key }
+
+// setKeyHeaders sets each name in env to the relay key header where it is unset or already
+// holds one; it returns the names it set and the ones holding something else.
+func setKeyHeaders(settings *object, names []string, key string) (owned, held []string) {
+	raw, ok := settings.get("env")
+	sec, isObj := raw.(*object)
+	if !ok {
+		sec, isObj = newObject(), true
+	}
+	if !isObj {
+		return nil, []string{"env (not an object)"}
+	}
+	for _, k := range names {
+		cur, present := sec.get(k)
+		if s, isStr := cur.(string); present && (!isStr || !strings.HasPrefix(s, relay.KeyHeader+"=")) {
+			held = append(held, "env."+k+" (holds a value install did not set)")
+			continue
+		}
+		sec.set(k, keyHeaderValue(key))
+		owned = append(owned, k)
+	}
+	if len(sec.keys) > 0 {
+		settings.set("env", sec)
+	}
+	return owned, held
+}
+
+// unsetKeyHeaders removes each name that still holds a relay key header.
+func unsetKeyHeaders(settings *object, names []string) {
+	raw, _ := settings.get("env")
+	sec, ok := raw.(*object)
+	if !ok {
+		return
+	}
+	for _, k := range names {
+		if s, _ := sec.m[k].(string); strings.HasPrefix(s, relay.KeyHeader+"=") {
+			sec.del(k)
+		}
+	}
+	if len(sec.keys) == 0 {
+		settings.del("env")
+	}
 }

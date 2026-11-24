@@ -66,6 +66,26 @@ func (t *Tail) CutBack() {
 	}
 }
 
+// AppendFile appends data (whole lines) to the JSON-lines file at path, created 0600, after a
+// newline when the file ends in a torn line; a write that fails partway is cut back. unchecked
+// is why the end could not be checked; the lines were then written without the check. The
+// caller holds whatever lock guards path.
+func AppendFile(path string, data []byte) (unchecked, err error) {
+	t, err := OpenTail(path)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := t.File.Write(t.Lead(data)); err != nil {
+		t.CutBack()
+		_ = t.File.Close() // the failed write is what is reported
+		return nil, fmt.Errorf("ledger: %w", err)
+	}
+	if err := t.File.Close(); err != nil {
+		return t.Unchecked, fmt.Errorf("ledger: %w", err)
+	}
+	return t.Unchecked, nil
+}
+
 // endsTorn is whether f, of size bytes, ends without a newline, or why its last byte could not
 // be read.
 func endsTorn(f *os.File, size int64) (bool, error) {

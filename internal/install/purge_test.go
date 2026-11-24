@@ -103,6 +103,10 @@ var notDataFiles = map[string]string{
 	"post-checkout": "a git hook",
 	"state.json":    "the Amp plugin's state, inside amp-plugin/, which purge deletes whole",
 	"last-turn":     "the Amp plugin's last recorded turn, inside amp-plugin/, which purge deletes whole",
+	"built.json":    "the keyspace index's manifest, inside index/, which purge deletes whole",
+	"lock":          "the keyspace index's lock, inside index/, which purge deletes whole",
+	"pending":       "the keyspace index's pending lines, inside index/, which purge deletes whole",
+	"stale":         "the keyspace index's stale mark, inside index/, which purge deletes whole",
 }
 
 // Guards: a new file a package keeps in the data folder that purge does not know, which is
