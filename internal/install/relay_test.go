@@ -1,7 +1,9 @@
 package install
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,6 +101,57 @@ func TestTheReceiverIsOnByDefaultUnlessOptedOut(t *testing.T) {
 		}
 		if c.held != "" && (o.otel != "" || o.otelTo == "sink" && o.otelDefault) {
 			t.Errorf("%s: OTEL to %q (default receiver %v) with the managed file refused, want none", c.name, o.otel, o.otelDefault)
+		}
+	}
+}
+
+// Guards: a plain re-install whose reload of the receiver did not answer in time (launchd
+// still tearing down the old job) removed the receiver an earlier install had running, and
+// with it Claude Code's and Codex's export, while install exited 0 and doctor said only
+// "otel not configured (optional)".
+func TestReinstallKeepsOrLoudlyRemovesAWorkingReceiver(t *testing.T) {
+	cases := []struct {
+		name       string
+		answers    []bool // relayListening's answer on each load
+		wantKept   bool
+		wantFailed bool
+	}{
+		{"answers on the retry", []bool{false, true}, true, false},
+		{"never answers", []bool{false, false}, false, true},
+	}
+	oldHost, oldLoad, oldListening, oldWait := relayHost, loadRelay, relayListening, receiverRetryWait
+	t.Cleanup(func() { relayHost, loadRelay, relayListening, receiverRetryWait = oldHost, oldLoad, oldListening, oldWait })
+	relayHost, receiverRetryWait = func() string { return "launchd" }, 0
+	// A kind removeRelay has no service command for: nothing here touches launchd.
+	loadRelay = func(string, string, string, []string) (Schedule, error) { return Schedule{Kind: "test"}, nil }
+	for _, c := range cases {
+		home := t.TempDir()
+		t.Setenv("HOME", home)
+		t.Setenv("LIVY_DIR", filepath.Join(home, ".livy"))
+		answers := c.answers
+		relayListening = func(time.Time) bool {
+			if len(answers) == 0 {
+				return false
+			}
+			a := answers[0]
+			answers = answers[1:]
+			return a
+		}
+		o, err := parseInstall(nil, "", "")
+		if err != nil || !o.sinkMode {
+			t.Fatalf("%s: the default receiver is not on (%v)", c.name, err)
+		}
+		var out bytes.Buffer
+		r := &installRun{o: o, p: paths{home: home, codex: filepath.Join(home, ".codex", "config.toml")},
+			prev: State{CodexRelay: Schedule{Kind: "test"}, OtelDestination: "sink"}, stdout: &out, stderr: io.Discard}
+		got := r.receiver()
+		if kept := got.Kind != "" && r.o.sinkMode; kept != c.wantKept || r.failed != c.wantFailed {
+			t.Errorf("%s: receiver kept %v, install failed %v; want %v, %v\n%s", c.name, kept, r.failed, c.wantKept, c.wantFailed, out.String())
+		}
+		ledgerLine, _ := os.ReadFile(filepath.Join(home, ".livy", "ledger.jsonl"))
+		said := strings.Contains(out.String(), "REMOVED") && strings.Contains(string(ledgerLine), "ledger.error")
+		if c.wantFailed && !said {
+			t.Errorf("%s: the removal was not said loudly and to the ledger:\n%s", c.name, out.String())
 		}
 	}
 }

@@ -445,14 +445,41 @@ func (r *installRun) receiver() Schedule {
 		return Schedule{}
 	}
 	receiver, msg, bad := loadReceiver(r.p, r.o, r.prev)
-	r.say("otel: %s", msg)
-	if bad {
-		// A receiver asked for fails the install. The default one is said here and in doctor's
-		// otel receiver row instead: an install nobody asked OTEL of still installs the rest.
-		r.failed = r.failed || !r.o.otelDefault
-		r.o.otel, r.o.sinkMode = "", false // not configured: the steps below remove ours
+	had := r.prev.CodexRelay.Kind != "" && r.prev.OtelDestination == "sink"
+	if bad && had {
+		// Reloading bootouts the running job first, so a reload that did not answer has
+		// already stopped the receiver; one more try once launchd's restart window has passed.
+		r.say("otel: %s; trying once more in %s", msg, receiverRetryWait)
+		time.Sleep(receiverRetryWait)
+		receiver, msg, bad = loadReceiver(r.p, r.o, r.prev)
 	}
+	r.say("otel: %s", msg)
+	if !bad {
+		return receiver
+	}
+	if had {
+		r.removedReceiver(msg)
+	}
+	// A receiver asked for fails the install. A first default one is said here and in doctor's
+	// otel receiver row instead: an install nobody asked OTEL of still installs the rest.
+	r.failed = r.failed || !r.o.otelDefault
+	r.o.otel, r.o.sinkMode = "", false // not configured: the steps below remove ours
 	return receiver
+}
+
+// receiverRetryWait is how long install waits before loading the receiver again: past
+// launchd's ThrottleInterval, so a job that exited at once is started afresh.
+var receiverRetryWait = (relayRestartSeconds + 5) * time.Second
+
+// removedReceiver fails the install and records it, for a receiver an earlier install had
+// running that this run could not load again: the steps after it remove Claude Code's and
+// Codex's export to it.
+func (r *installRun) removedReceiver(why string) {
+	text := "REMOVED Livy's OTEL receiver that an earlier install set up (" + why +
+		"); Claude Code and Codex no longer export OTEL until `livy install` loads it again"
+	r.fail("otel: %s", text)
+	fmt.Fprintf(r.stderr, "livy install: %s\n", text)
+	hook.WriteError("livy install: "+text, r.stderr)
 }
 
 // claudeCode is step 3: hooks, and OTEL when asked, in the user settings file.
