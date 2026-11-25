@@ -47,6 +47,15 @@ what a fast judgment model would decide about the agent's next move.
 - **Never records** prompt or reply text, tool inputs or outputs, shell commands, the
   working folder, transcript paths, or a PR number read from `gh pr create` output.
   (Prompt text is kept only in the local vault below, never in the ledger, and never sent from it.)
+- **Tool targets, on this machine only:** for each Claude Code tool call, a short target in
+  `tool-targets/` in the data folder (owner-only, one file per day, kept 90 days, never shipped):
+  the file a read or edit named (repo-relative, or `~/` under home), the folder a search ran in, the
+  program a shell command ran (with its subcommand for `git`, `go`, `gh`, `npm`, `pnpm`, `yarn`,
+  `cargo`, `docker`, `kubectl`, `gcloud` and `uv`), a fetch's host, a subagent's task label (the
+  Agent call's description, never its prompt) and a skill's name. Never an argument's value, a
+  search pattern, a URL's path or query, or any output. Each is scrubbed and audited with the
+  denylist and dropped when the audit refuses it; with no denylist none is kept. `livy pr` and
+  `livy profile` show them on a trace's spans.
   `work.pr_opened` is written only when a Bash command, read as the shell reads it,
   actually runs `gh pr create`.
 - **Only the orgs and repos you name.** A repo is in scope only when its `origin` is on
@@ -55,6 +64,9 @@ what a fast judgment model would decide about the agent's next move.
   (`scope.repos`), which brings in that repository and none of its owner's others. No org is
   built in: with neither configured nothing is recorded. An out-of-scope repo leaves no trace in the ledger.
   OTEL is not scoped this way: see [OTEL export](#otel-export-on-by-default) and `otel.ignore`.
+  Hooks are scoped by the folder Claude Code was started in: started outside the repo (a parent
+  folder, the home folder) and working in it by path, a session records its calls and tools but no
+  prompt, and `livy doctor`'s `prompt capture` row counts such sessions from the last 7 days.
 
 ## The guarantees
 
@@ -165,6 +177,11 @@ layer is ignored, as it would widen what the admin scoped.
 The managed file is `/etc/livy/managed.json` on Linux, `/Library/Application Support/Livy/managed.json`
 on macOS and `%ProgramData%\Livy\managed.json` on Windows. A file that repeats a key is refused
 as a whole.
+
+A data folder other than the one `livy install` set up (a scratch `LIVY_DIR` for a test or a
+probe) never ships to the user file's sinks: it uploads only to a sink its own `config.json`
+names (or the managed file or the environment sets). `livy doctor` says when the folder in use
+is such a folder. Re-run `livy install` with `LIVY_DIR` set to move the installed folder.
 
 ## Prompt capture and upload (optional, off by default)
 
@@ -323,7 +340,9 @@ the text report's: 1 when `read.unread` names something that could not be read.
   for each of its `commits`), and `read` (`events`, `files` by source, `oldest_event`,
   `duplicate_lines`, `unreadable_files_or_lines`, `unread`, and `summary`, the text's last lines).
 - `livy.profile/1`: `commits[]` (`sha`, `committed`, `rework`, `sessions[]` with the window and its `window_basis_kind` and `window_basis_sha`,
-  `start`, `wall_ms`, `timed`, `agent_ms`, `model_ms`, `waiting_on_human_ms`, `other_ms`,
+  `start`, `wall_ms`, `timed`, `turns_inferred` (true when a window timed from Livy's hooks has no
+  prompt line: each turn runs from its first call to its last, and the wait before it holds its
+  first call), `agent_ms`, `model_ms`, `waiting_on_human_ms`, `other_ms`,
   `turns`, span counts, the `longest` spans (`kind`: `model`, `tool` or `subagent`; `name`;
   `agent`: `main` or the subagent's id, `agent_type` when the ledger names it; `starts_agent`, the
   subagent a `subagent` span ran; `outcome`: `ok`, `failed`, `rejected` or `""` when the spans do not
@@ -333,7 +352,27 @@ the text report's: 1 when `read.unread` names something that could not be read.
   `totals`, and `read` (`spans`, `span_files`, `unread`, and `summary`, the ledger lines read).
   Each session also counts the window's `prompts` and `agent_briefs`, the lengths of `livy.why/1`'s
   `prompt_ids` and `agent_brief_ids`.
+  A timed window's trace: `spans[]`, every span in its turns' trees in tree order (`id`, unique in
+  the window; `parent`, `""` for a turn; `kind`: `turn`, `model`, `tool`, `subagent` or `approval`;
+  `name`, `start`, `end`, `duration_ms`, `agent`, `starts_agent`, `outcome`, and for a model span
+  `call`: its `usage.api_call` joined by message or request id, with `model`, the token counts,
+  `context_tokens` (uncached input plus cache reads and writes) and `cache` as below; null when no
+  line matches); `agents[]`, one lane per agent (`id`, `type`, `launched_by`: the span that ran it,
+  `parent`: that span's agent; `label`: its task label, when kept); a tool or subagent span's
+  `target` is its kept tool target (above), `""` when none; and `markers[]` (`kind` `skill` or `compaction`, `ts`, `agent`,
+  `name`: the skill).
   `--top N` sets how many spans `longest` lists. The span tree is in the text report only.
+
+  A call's `cache` (`class`, `cause`, `previous_prefix`, `tokens_rewritten`, `gap_ms`,
+  `mid_burst_drop`) compares its cache reads with the prefix the previous call on the same cache
+  left (that call's reads plus writes; a cache is one session's thread or one subagent, on one
+  model). `class` is `first` (nothing to reuse before it), `hit` (it read back all of that prefix
+  it still sent), `partial_miss`, or `full_miss` (it read back at most a tenth). A miss has a
+  `cause`, the first that applies: `compaction` (its thread compacted between the two calls),
+  `model_switch` (the first call on its model in a thread whose previous call was on another; it is
+  judged against that call), `idle_past_1h` or `idle_past_5m` (the gap passed the lifetime the cache
+  was last written with) or `unexplained`.
+  `tokens_rewritten` is the part of the previous prefix a miss wrote again.
 
 ## One pull request, fast (`livy pr`, `livy reindex`)
 
@@ -355,7 +394,8 @@ it never looks a commit up as a squash merge on GitHub (`squash` is always null)
 `estimated_usd`, `calls`, `unpriced_calls`, `unpriced_models` and `basis`, for the pull request
 (each call once) and for each commit's windows (`cost.commits[]`). Prices come from one table built
 into the binary, `internal/price/prices.json`, each row with its source and the date it was read. A
-call to a model the table lacks, or at a tier or speed other than standard, is counted as unpriced
+call to a model the table lacks, at a tier or speed other than standard, or with a prompt longer than
+the vendor gives a rate for (Sonnet 4.5 and 4 over 200K tokens), is counted as unpriced
 and never priced at $0 (`unpriced_models` names the unpriced calls' models, `basis` the reasons);
 `estimated_usd` is null when no call was priced. Cache writes are priced at
 the 5-minute or 1-hour rate the call records, and at the 5-minute rate when it records no split
@@ -363,11 +403,11 @@ the 5-minute or 1-hour rate the call records, and at the 5-minute rate when it r
 
 `cost` also says how well the calls reused the prompt cache, for the pull request and each commit:
 `cache_hit_rate` is cache reads over all input tokens (reads, writes and uncached input; null with
-none), and `cache_drops_mid_burst` (`count`, `tokens_rewritten`) is the calls that, under 5 minutes
-after the previous call on the same cache (one session's thread or subagent, one model) and with no
-compaction between them, wrote at least 10,000 tokens to the cache while reading back under half of
-what that call had cached; `tokens_rewritten` is the lost part of that prefix written again. A cache
-that expired over a longer idle gap is not counted, and no drop is priced.
+none); `cache_classes` counts the calls by cache class (and `unclassified`, a call with no id), and
+`cache_misses` gives each cause's `count` and `tokens_rewritten`. `cache_drops_mid_burst` (`count`,
+`tokens_rewritten`) is the `unexplained` misses under 5 minutes after the previous call that wrote
+at least 10,000 tokens to the cache while reading back under half of the previous prefix. No miss
+is priced.
 
 The index (`index/` in the data folder) keeps each ledger line and span a second time, in small
 files keyed by session, by repo and branch, and by commit sha. Every hook, extraction and the OTEL

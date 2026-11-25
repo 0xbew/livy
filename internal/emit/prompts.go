@@ -63,7 +63,7 @@ func promptPass(ctx context.Context, dir string, stderr io.Writer, dry bool) {
 		report(stderr, "prompt text kept, not sent: no usable denylist ("+why+")")
 		return
 	}
-	sink, err := PromptSinkFromSettings(hook.Settings())
+	sink, err := PromptSinkFromSettings(hook.UploadSettings())
 	if err != nil {
 		report(stderr, "prompt text kept, not sent: "+err.Error())
 		return

@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"cmp"
 	"maps"
 	"slices"
 	"time"
@@ -29,6 +30,8 @@ type Profile struct {
 	Placed, Total int
 	// Busy and Wait are known only when a turn span is in the window.
 	Timed bool
+	// TurnsInferred is true when the turns were inferred from the calls, for want of a prompt line.
+	TurnsInferred bool
 }
 
 // Other is wall time that is neither agent time nor waiting on the human: the harness's own
@@ -97,7 +100,11 @@ func (f forest) session(id string) (turns []Span, members map[spanKey]Span) {
 			f.descend(s, func(d Span) { members[spanKey{d.Trace, d.ID}] = d })
 		}
 	}
-	slices.SortStableFunc(turns, func(a, b Span) int { return a.Start.Compare(b.Start) })
+	// Turns come from a map: two that start together are put in a fixed order, so a trace's span
+	// ids are the same on every run.
+	slices.SortFunc(turns, func(a, b Span) int {
+		return cmp.Or(a.Start.Compare(b.Start), a.End.Compare(b.End), cmp.Compare(a.Trace, b.Trace), cmp.Compare(a.ID, b.ID))
+	})
 	return turns, members
 }
 

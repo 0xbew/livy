@@ -95,6 +95,9 @@ func (r *report) session(s why.Session, indent string) {
 	if src == SourceHooks {
 		fmt.Fprintf(r.w, "%s  from hooks: no span for this window, so these times come from Livy's own ledger lines\n", indent)
 	}
+	if p.TurnsInferred {
+		fmt.Fprintf(r.w, "%s  no prompt line: each turn is inferred from its first to its last call, and the wait before it holds its first call\n", indent)
+	}
 	fmt.Fprintf(r.w, "%s  spans: %d of %d in the tree\n", indent, p.Placed, p.Total)
 	for _, t := range p.Turns {
 		fmt.Fprintf(r.w, "%s  turn at %s  %s\n", indent, t.Start.Format(time.RFC3339), dur(t.Duration()))

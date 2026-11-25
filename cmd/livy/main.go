@@ -37,7 +37,7 @@ import (
 // value (conformance/harness/extractview.py, emitview.py), as the contract does.
 var implemented = []string{"hook", "git post-checkout", "extract", "spotcheck", "prompt-capture", "install", "uninstall", "doctor", "emit", "amp"}
 
-func sinkFor() (emit.Sink, error) { return emit.FromSettings(hook.Settings()) }
+func sinkFor() (emit.Sink, error) { return emit.FromSettings(hook.UploadSettings()) }
 
 // doctorStatus handles emit's --doctor-status PATH (the daily job): run doctor, write its
 // status file, and record its verdict as one doctor.status event before the sweep, so it

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/0xbew/livy/internal/config"
+	"github.com/0xbew/livy/internal/hook"
 	"github.com/0xbew/livy/internal/oldnames"
 	"github.com/0xbew/livy/internal/prompts"
 )
@@ -295,4 +296,67 @@ func TestEmitExtractRunsThePromptPass(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(data, prompts.StateName)); err != nil {
 		t.Errorf("emit --extract left no prompt-capture state (%v): the prompt pass did not run", err)
 	}
+}
+
+// Guards: a probe run with LIVY_DIR set to a scratch folder shipped its segments to the user's
+// bucket (#235): the async upload hook read the sink from ~/.livy/config.json, which is where the
+// installed folder's data goes, not a scratch folder's. Only the installed folder (the user
+// folder, or the one `livy install` recorded) uses the user file's sink; any other ships only to
+// a sink its own config.json names.
+func TestAScratchDataFolderShipsOnlyToItsOwnSink(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	userSink, ownSink := filepath.Join(home, "user-sink"), filepath.Join(home, "own-sink")
+	installed, elsewhere := filepath.Join(home, ".livy"), filepath.Join(home, "installed-elsewhere")
+	writeFile(t, filepath.Join(installed, "config.json"), `{"sink":{"type":"local","path":"`+userSink+`"}}`)
+	writeFile(t, filepath.Join(installed, "install.json"), `{"binary":"livy","settings":"s","schedule":{},"data_dir":"`+elsewhere+`"}`)
+	for i, tc := range []struct {
+		name, dir, ownConfig, want string
+	}{
+		{"the user folder ships to the user's sink", installed, "", userSink},
+		{"the folder install recorded ships to the user's sink", elsewhere, "", userSink},
+		{"a scratch folder ships nowhere", filepath.Join(home, "scratch"), "", ""},
+		{"a scratch folder whose config names a sink ships there", filepath.Join(home, "scratch-own"),
+			`{"sink":{"type":"local","path":"` + ownSink + `"}}`, ownSink},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("LIVY_DIR", tc.dir)
+			// Each row's segment differs, so its object key is new: a same-key write is a no-op.
+			writeFile(t, filepath.Join(tc.dir, "ledger.jsonl"), `{"event":"turn.ended","repo":"acme/w","schema_version":1,"session_id":"s-`+
+				strconv.Itoa(i)+`","ts":"2026-11-25T11:00:00+00:00"}`+"\n")
+			if tc.ownConfig != "" {
+				writeFile(t, filepath.Join(tc.dir, "config.json"), tc.ownConfig)
+			}
+			before := map[string]int{userSink: countFiles(userSink), ownSink: countFiles(ownSink)}
+			Run(context.Background(), nil, nil, io.Discard, func() (Sink, error) { return FromSettings(hook.UploadSettings()) })
+			for _, s := range []string{userSink, ownSink} {
+				got := countFiles(s) - before[s]
+				if want := map[bool]int{true: 1}[s == tc.want]; got != want {
+					t.Errorf("LIVY_DIR=%s: %d new objects in %s, want %d", tc.dir, got, s, want)
+				}
+			}
+		})
+	}
+}
+
+func writeFile(t *testing.T, path, body string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// countFiles is how many files are under dir (0 when it does not exist).
+func countFiles(dir string) int {
+	n := 0
+	_ = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			n++
+		}
+		return nil
+	})
+	return n
 }

@@ -10,6 +10,7 @@ package doctor
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -98,6 +99,7 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	}
 
 	checkConfig(&r, res)
+	checkDataDir(&r, dir)
 	err := checkSink(ctx, &r, sinkFor, dir)
 
 	checkClaudeVersions(ctx, &r, hook.Home())
@@ -118,7 +120,7 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	held := otelHeld(&r, res)
 	if !held {
 		checkOtel(ctx, &r, managed)
-		checkCodexOtel(ctx, &r)
+		checkCodexOtel(ctx, &r, managed)
 	}
 	checkCodexHooks(&r)
 	checkAmp(ctx, &r)
@@ -128,6 +130,7 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	}
 	checkDenylist(&r)
 	checkPrompts(&r, dir)
+	checkOutsideRepo(&r, dir)
 
 	r.OK = true
 	for _, row := range r.Rows {
@@ -171,6 +174,15 @@ func tilde(path string) string {
 		return "~/" + rel
 	}
 	return path
+}
+
+// checkDataDir adds a row only for a data folder `livy install` did not set up: its uploads
+// ignore the user file's sinks.
+func checkDataDir(r *Report, dir string) {
+	if installed, recorded := hook.InstalledDataDir(dir); !installed {
+		r.add(Warn, "data folder", "%s is not the folder livy install set up (%s): it ships only to a sink its own config.json names",
+			dir, cmp.Or(recorded, tilde(filepath.Join(hook.Home(), ".livy"))))
+	}
 }
 
 // checkSink adds the sink row: configured, and its credentials answer, without writing. It
@@ -749,7 +761,7 @@ func checkOtel(ctx context.Context, r *Report, managed ccpolicy.Settings) {
 		r.add(OK, "otel", "not configured (optional)")
 		return
 	}
-	if checkManagedOtel(r, managed, st) {
+	if checkManagedOtel(r, managed, st, settingsPath) {
 		return
 	}
 	r.Rows = append(r.Rows, OtelSettingsProblems(effectiveEnv(doc.Env, managed), os.Getenv)...)
@@ -874,7 +886,7 @@ func otlpProbe(ctx context.Context, endpoint, path, body string, headers map[str
 
 // checkCodexOtel says when Codex's export carries a stored header: Codex reads headers
 // only literally, so install wrote the value into its config (mode 0600).
-func checkCodexOtel(ctx context.Context, r *Report) {
+func checkCodexOtel(ctx context.Context, r *Report, managed ccpolicy.Settings) {
 	st, _ := install.Recorded()
 	if st.CodexConfig == "" {
 		return
@@ -885,7 +897,7 @@ func checkCodexOtel(ctx context.Context, r *Report) {
 		return
 	}
 	if st.CodexRelay.Kind != "" {
-		checkCodexRelay(ctx, r, st, raw)
+		checkCodexRelay(ctx, r, st, raw, managed)
 		return
 	}
 	var on []string
@@ -1011,7 +1023,7 @@ func firstNonEmpty(a ...string) string {
 // checkCodexRelay: Codex exports through the local relay. The table must carry the relay's
 // key, the relay must answer and deliver an empty export, and no running Codex process may
 // predate the table, since Codex reads it once at start.
-func checkCodexRelay(ctx context.Context, r *Report, st install.State, table []byte) {
+func checkCodexRelay(ctx context.Context, r *Report, st install.State, table []byte, managed ccpolicy.Settings) {
 	dir := hook.DataDir()
 	key := relay.ReadKey(dir)
 	if key == "" || !bytes.Contains(table, []byte(strconv.Quote(relay.KeyHeader)+" = "+strconv.Quote(key))) {
@@ -1040,8 +1052,8 @@ func checkCodexRelay(ctx context.Context, r *Report, st install.State, table []b
 			state.Failed, state.CountingSince, state.LastFailedAt, state.LastFailure)
 	}
 	if t, err := time.Parse(time.RFC3339, state.LastRefusedAt); err == nil && now.Sub(t) < 24*time.Hour {
-		r.add(Warn, "codex otel relay", "%d request(s) refused for a missing or wrong relay key since %s, the last at %s: a Codex process started before the key (restart it), Claude Code exporting with headers that are not Livy's (see the otel managed settings rows), or another local process",
-			state.Refused, state.CountingSince, state.LastRefusedAt)
+		r.add(Warn, "codex otel relay", "%d request(s) refused for a missing or wrong relay key since %s, the last at %s: %s",
+			state.Refused, state.CountingSince, state.LastRefusedAt, refusalCauses(t, managed))
 	}
 	since, err := time.Parse(time.RFC3339, st.CodexRelaySince)
 	if err != nil {

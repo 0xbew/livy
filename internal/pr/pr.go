@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/0xbew/livy/internal/profile"
+	"github.com/0xbew/livy/internal/tooltarget"
 	"github.com/0xbew/livy/internal/why"
 )
 
@@ -188,7 +189,8 @@ func assemble(o options, facts []why.Commit, ld loaded) Doc {
 	for _, e := range explained {
 		doc.Why.Commits = append(doc.Why.Commits, why.ToJSON(e))
 	}
-	doc.Profile = profile.Report(explained, ld.events, ld.spans, o.top)
+	targets, _ := tooltarget.Read(dataDir(), profile.SessionsOf(explained))
+	doc.Profile = profile.Report(explained, ld.events, ld.spans, o.top, targets)
 	doc.Profile.Read = ld.spanRd
 	doc.Profile.Read.Summary = ld.read.Summary
 	doc.Profile.Read.Unread = append(append([]string{}, ld.read.Unread...), ld.spanRd.Unread...)

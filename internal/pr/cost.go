@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/0xbew/livy/internal/price"
+	"github.com/0xbew/livy/internal/promptcache"
 	"github.com/0xbew/livy/internal/why"
 )
 
@@ -44,7 +45,7 @@ type Estimate struct {
 // windows; events are every line read, for each call's predecessor in its stream.
 func costOf(explained []why.Explained, events []why.Event) Cost {
 	table, err := price.Load()
-	prior := priorCalls(events)
+	verdicts := promptcache.Classify(events)
 	out := Cost{Commits: make([]CommitCost, 0, len(explained))}
 	var all []why.Call
 	for _, ex := range explained {
@@ -54,10 +55,10 @@ func costOf(explained []why.Explained, events []why.Event) Cost {
 		}
 		all = append(all, calls...)
 		out.Commits = append(out.Commits, CommitCost{SHA: ex.Commit.SHA, Estimate: estimate(calls, table, err),
-			Cache: cacheOf(calls, prior)})
+			Cache: cacheOf(calls, verdicts)})
 	}
 	all = once(all)
-	out.Estimate, out.Cache = estimate(all, table, err), cacheOf(all, prior)
+	out.Estimate, out.Cache = estimate(all, table, err), cacheOf(all, verdicts)
 	return out
 }
 

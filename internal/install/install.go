@@ -44,6 +44,7 @@ import (
 	"github.com/0xbew/livy/internal/relay"
 	"github.com/0xbew/livy/internal/sink/gcs"
 	"github.com/0xbew/livy/internal/spotcheck"
+	"github.com/0xbew/livy/internal/tooltarget"
 )
 
 // State is what install wrote, so uninstall removes exactly that. It holds paths and the
@@ -78,6 +79,10 @@ type State struct {
 	// RelayKeyEnv are the per-signal OTLP headers keys install set to the relay key (only with
 	// --otel-around-managed): their names, never the key.
 	RelayKeyEnv []string `json:"relay_key_env,omitempty"`
+
+	// DataDir is the data folder this install set up. Uploads use the user file's sinks for it
+	// and the user folder only: any other folder ships where its own config.json says.
+	DataDir string `json:"data_dir,omitempty"`
 }
 
 type listFlag []string
@@ -386,6 +391,9 @@ func (r *installRun) loadRecord() bool {
 	r.prev = prev
 	r.st = prev // what an earlier install owns stays owned unless this run removes it
 	r.st.Binary, r.st.Settings = r.p.bin, r.p.settings
+	if dir, err := filepath.Abs(hook.DataDir()); err == nil {
+		r.st.DataDir = dir
+	}
 	if stateErr == nil {
 		return true
 	}
@@ -751,7 +759,7 @@ func (r *installRun) schedule() {
 func dataNames() []string {
 	return slices.Concat(ledger.DataNames(), emit.DataNames(), prompts.DataNames(), relay.DataNames(),
 		spotcheck.DataNames(), extract.DataNames(), cli.DataNames(), claudecode.DataNames(),
-		codex.DataNames(), denylist.DataNames(), amp.DataNames(), keyspace.DataNames(), []string{dogfoodParkDir})
+		codex.DataNames(), denylist.DataNames(), amp.DataNames(), keyspace.DataNames(), tooltarget.DataNames(), []string{dogfoodParkDir})
 }
 
 const (

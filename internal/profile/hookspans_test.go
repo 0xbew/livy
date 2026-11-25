@@ -28,7 +28,7 @@ func TestHookTimedWindow(t *testing.T) {
 	s := why.Session{ID: hookSession, Harness: "claude-code", To: end, Prompts: []string{"a", "b", "c"}, Sent: prompts}
 	commits := []why.Explained{{Commit: why.Commit{SHA: "0000000", Committed: end}, Report: why.Report{Sessions: []why.Session{s}}}}
 
-	got := profile.Report(commits, col.Events(), nil, 100).Commits[0].Sessions[0]
+	got := profile.Report(commits, col.Events(), nil, 100, nil).Commits[0].Sessions[0]
 
 	if !got.Timed || got.TimingSource != "hooks" {
 		t.Fatalf("timed %v from %q, want timed from hooks", got.Timed, got.TimingSource)
@@ -60,5 +60,43 @@ func TestHookTimedWindow(t *testing.T) {
 	}
 	if !launched {
 		t.Errorf("no subagent span runs %s: its calls would draw outside the call that launched them", subagent)
+	}
+	checkTrace(t, got, subagent)
+}
+
+// checkTrace guards a window whose trace cannot be drawn: only the longest spans listed, with no
+// lane per subagent, and model calls with no tokens, context size or cache verdict. Expected
+// values are the fixture's own usage.api_call lines: 9 calls, the subagent's first one sending
+// 2 + 0 + 36274 tokens.
+func checkTrace(t *testing.T, got profile.JSONSession, subagent string) {
+	t.Helper()
+	var models, joined int
+	var first *profile.JSONCall
+	for _, sp := range got.Spans {
+		if sp.Kind != "model" {
+			continue
+		}
+		models++
+		if sp.Call != nil {
+			joined++
+		}
+		if sp.Agent == subagent && first == nil {
+			first = sp.Call
+		}
+	}
+	if models != 9 || joined != 9 {
+		t.Errorf("trace has %d model spans, %d joined to their call; want all 9 calls, each joined", models, joined)
+	}
+	if first == nil || first.ContextTokens != 36276 || first.Cache.Class != "first" {
+		t.Errorf("subagent's first call %+v, want context 36276 tokens, cache class first", first)
+	}
+	var lane *profile.JSONAgent
+	for i := range got.Agents {
+		if got.Agents[i].ID == subagent {
+			lane = &got.Agents[i]
+		}
+	}
+	if lane == nil || lane.LaunchedBy == "" || lane.Parent != "main" {
+		t.Errorf("subagent lane %+v, want one launched by a span of main", lane)
 	}
 }

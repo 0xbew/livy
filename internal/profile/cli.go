@@ -11,6 +11,7 @@ import (
 	"github.com/0xbew/livy/internal/hook"
 	"github.com/0xbew/livy/internal/ledgerfiles"
 	"github.com/0xbew/livy/internal/relay"
+	"github.com/0xbew/livy/internal/tooltarget"
 	"github.com/0xbew/livy/internal/why"
 )
 
@@ -43,7 +44,8 @@ func Main(args []string, stdout, stderr io.Writer) int {
 	}
 	spans, read := loadSpans(o.data)
 	if o.json {
-		return writeJSON(Report(r.Commits, r.Events, spans, o.top), r, read, stdout, stderr)
+		targets, _ := tooltarget.Read(hook.DataDir(), SessionsOf(r.Commits))
+		return writeJSON(Report(r.Commits, r.Events, spans, o.top, targets), r, read, stdout, stderr)
 	}
 	rep := report{w: stdout, spans: spans, events: r.Events, top: o.top, all: o.all}
 	for _, e := range r.Commits {
@@ -100,8 +102,9 @@ func writeJSON(out JSONReport, r why.Range, read spanSources, stdout, stderr io.
 
 // Report is the livy.profile/1 document for commits from the ledger events and spans they were
 // explained from, every span listed down to top per window; its Read is the caller's to fill.
-func Report(commits []why.Explained, events []why.Event, spans []Span, top int) JSONReport {
-	b := &jsonBuilder{spans: spans, events: events, top: top, agentTypes: agentTypesOf(events)}
+func Report(commits []why.Explained, events []why.Event, spans []Span, top int, targets map[string]string) JSONReport {
+	b := &jsonBuilder{spans: spans, events: events, top: top, agentTypes: agentTypesOf(events), calls: callsOf(events), targets: targets,
+		markers: markersOf(events)}
 	out := JSONReport{Schema: JSONSchema, Commits: make([]JSONCommit, 0, len(commits))}
 	for _, e := range commits {
 		out.Commits = append(out.Commits, b.commit(e))

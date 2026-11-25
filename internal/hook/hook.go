@@ -153,12 +153,21 @@ func (r *run) handle(args []string, stdin *os.File, enforceScope bool) {
 	if p.problem != "" {
 		r.errorEvent(fmt.Sprintf("%s (event %s still recorded)", p.problem, name), true)
 	}
-	rec := r.build(name, overrides, p)
-	if name == "tool.call" && p.obj != nil {
-		r.claudeToolCall(rec, p.obj)
+	r.write(name, r.build(name, overrides, p), p.obj)
+}
+
+// write appends rec, event name's line; a Claude Code tool.call (obj is its payload) also says
+// when the call ran, and keeps its target in the local store.
+func (r *run) write(name string, rec, obj map[string]any) {
+	toolCall := name == "tool.call" && obj != nil
+	if toolCall {
+		r.claudeToolCall(rec, obj)
 	}
 	if !r.append(rec) {
 		r.errorEvent("could not write event "+name, true)
+	}
+	if toolCall {
+		r.keepTarget(rec, obj)
 	}
 }
 

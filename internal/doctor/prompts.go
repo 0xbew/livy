@@ -36,7 +36,7 @@ func checkPrompts(r *Report, dir string) {
 		r.add(Fail, "prompt upload", "on, but no usable denylist (%s): no text can be written", why)
 		return
 	}
-	if _, err := emit.PromptSinkFromSettings(hook.Settings()); err != nil {
+	if _, err := emit.PromptSinkFromSettings(hook.UploadSettings()); err != nil {
 		r.add(Fail, "prompt upload", "on, but %v: queued text cannot leave", err)
 		return
 	}

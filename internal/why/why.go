@@ -79,6 +79,8 @@ type Event struct {
 	Trigger    string `json:"trigger"`
 	SHA256     string `json:"sha256"`
 	TreeSHA256 string `json:"tree_sha256"`
+	// A call.detail line's stop reason: "end_turn" when the model handed back to the human.
+	StopReason string `json:"stop_reason"`
 }
 
 // Report is what why says about one commit.

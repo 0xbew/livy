@@ -83,9 +83,18 @@ type JSONSession struct {
 	// AgentBriefs how many agent-written briefs, as its agent_brief_ids.
 	Prompts     int `json:"prompts"`
 	AgentBriefs int `json:"agent_briefs"`
+	// TurnsInferred is true for a window timed from hooks with no prompt line: each turn runs from
+	// its first model call's end to its last call or tool, so the wait before a turn holds its
+	// first call too.
+	TurnsInferred bool `json:"turns_inferred"`
 	// TimingSource is where a timed window's times came from: "otel" (spans) or "hooks" (Livy's
 	// own ledger lines, when no span reached Livy); "" when the window is not timed.
 	TimingSource string `json:"timing_source"`
+	// Spans is a timed window's trace: every span in its turns' trees, in tree order; Agents the
+	// lanes they ran in, main first; Markers its skill loads and compactions. Empty when untimed.
+	Spans   []JSONTraceSpan `json:"spans"`
+	Agents  []JSONAgent     `json:"agents"`
+	Markers []JSONMarker    `json:"markers"`
 }
 
 // JSONTurn is one turn, clipped to the window.
@@ -154,6 +163,12 @@ type jsonBuilder struct {
 	// agentTypes is each subagent's type by its id, from the ledger.
 	agentTypes map[string]string
 	files      commitFiles
+	// calls is what a model span joins to: its usage.api_call and cache verdict.
+	calls calls
+	// markers are each session's skill loads and compactions, oldest first.
+	markers map[string][]JSONMarker
+	// targets are the tool calls' kept targets (package tooltarget), by tool use id.
+	targets map[string]string
 }
 
 func (b *jsonBuilder) commit(e why.Explained) JSONCommit {
@@ -190,7 +205,8 @@ func (b *jsonBuilder) session(s why.Session) JSONSession {
 	kind, sha := why.BasisKind(s.Basis)
 	out := JSONSession{WindowBasisKind: kind, WindowBasisSHA: sha, ID: s.ID, Harness: s.Harness, WindowFrom: why.TimeOrNull(s.From), WindowTo: s.To.UTC(),
 		Start: why.TimeOrNull(p.Start), Timed: p.Timed, Turns: len(p.Turns), SpansPlaced: p.Placed, SpansTotal: p.Total,
-		Longest: []JSONSpan{}, TurnTimes: []JSONTurn{}, Waits: []JSONWait{}}
+		Longest: []JSONSpan{}, TurnTimes: []JSONTurn{}, Waits: []JSONWait{}, Spans: []JSONTraceSpan{}, Agents: []JSONAgent{},
+		Markers: []JSONMarker{}}
 	out.Prompts, out.AgentBriefs = len(s.Prompts), len(s.AgentBriefs)
 	if p.Start.IsZero() {
 		return out
@@ -202,10 +218,12 @@ func (b *jsonBuilder) session(s why.Session) JSONSession {
 	b.totals.Timed++
 	b.totals.TimedFromHooks += b2i(src == SourceHooks)
 	out.TimingSource = string(src)
+	out.TurnsInferred = p.TurnsInferred
 	b.totals.WallMS += p.Wall.Milliseconds()
 	b.totals.AgentMS += p.Busy.Milliseconds()
 	b.totals.WaitMS += p.Wait.Milliseconds()
 	out.AgentMS, out.ModelMS, out.WaitMS, out.OtherMS = p.Busy.Milliseconds(), p.Model.Milliseconds(), p.Wait.Milliseconds(), p.Other().Milliseconds()
+	out.Spans, out.Agents, out.Markers = b.traceOf(p, s.ID)
 	for _, n := range longestOf(p, b.top) {
 		out.Longest = append(out.Longest, b.span(n))
 	}

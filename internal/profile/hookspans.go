@@ -28,6 +28,12 @@ const (
 // began at the last thing its agent was waiting on: the prompt, its previous call, the tools
 // that call asked for, or, for a subagent's first call, the Agent call that ran it. A call with
 // none of these is left out, so its time shows as unknown rather than as a guess.
+//
+// A session with no prompt line (Claude Code ran outside every in-scope repo, so neither its
+// hooks nor extraction wrote one, while its calls worked in one) has its turns inferred: each
+// runs from its first main-agent call's end to the last call or tool before the next turn's
+// first call, and a turn ends at a call whose call.detail says it handed back (end_turn). The
+// first call of each turn has no start, so its time falls in the wait before the turn.
 
 // Span names Kind reads, and the attributes a model call carries, as Claude Code names its own
 // (gen_ai.response.id is the API message id), so a reader joins either kind to usage.api_call.
@@ -46,10 +52,13 @@ const (
 	eventOutcome = "tool.outcome"
 	eventDetail  = "call.detail"
 	sourceHook   = "hook"
+	// stopHandBack is a call.detail stop_reason that ends the turn.
+	stopHandBack = "end_turn"
 )
 
 // profileOf is session s's profile in its window: from the spans when they time it, else from
-// the session's ledger lines. Codex and Amp sessions are timed from spans only.
+// the session's ledger lines (TurnsInferred when it has no prompt line). Codex and Amp sessions
+// are timed from spans only.
 func profileOf(spans []Span, events []why.Event, s why.Session) (Profile, Source) {
 	w := windowOf(s)
 	p := Build(spans, w)
@@ -59,10 +68,12 @@ func profileOf(spans []Span, events []why.Event, s why.Session) (Profile, Source
 	if s.Harness == "codex" || s.Harness == "amp" {
 		return p, SourceNone
 	}
-	hp := Build(hookSpans(events, s.ID), w)
+	spans, inferred := hookSpans(events, s.ID)
+	hp := Build(spans, w)
 	if !hp.Timed {
 		return p, SourceNone
 	}
+	hp.TurnsInferred = inferred
 	return hp, SourceHooks
 }
 
@@ -85,17 +96,17 @@ type sessionLines struct {
 	calls          []callTime
 	tools          map[string]*toolTime
 	outcomes       []toolTime
-	// launched is, per API message, the tools its call.detail says it asked for.
+	// launched is, per API message, the tools its call.detail says it asked for; handBack the
+	// messages whose call.detail says the model handed back.
 	launched map[string][]string
+	handBack map[string]bool
 }
 
 // hookSpans are the spans session id's ledger lines stand for, named as Claude Code names its
-// own, under one trace of their own.
-func hookSpans(events []why.Event, id string) []Span {
+// own, under one trace of their own; inferred is true when the session has no prompt line.
+func hookSpans(events []why.Event, id string) (spans []Span, inferred bool) {
 	l := readSessionLines(events, id)
-	if len(l.prompts) == 0 {
-		return nil
-	}
+	inferred = len(l.prompts) == 0
 	tools := l.toolTimes()
 	b := spanBuilder{session: id, trace: "livy-hooks:" + id, launcher: map[string]string{}}
 	launches := map[string]time.Time{}
@@ -110,6 +121,9 @@ func hookSpans(events []why.Event, id string) []Span {
 		l.calls = append(l.calls, c.callTime)
 	}
 	turns := b.turns(l, tools)
+	if inferred {
+		turns = b.inferredTurns(l, tools)
+	}
 	for _, t := range tools {
 		sid := b.tool(t, b.parentOf(turns, t.agent, t.start))
 		if t.spawned != "" {
@@ -123,13 +137,13 @@ func hookSpans(events []why.Event, id string) []Span {
 		b.add(nameModel, c.start, c.end, b.parentOf(turns, c.agent, c.start), map[string]string{"model": c.model,
 			"agent_id": c.agent, "gen_ai.response.id": c.message, "request_id": c.request})
 	}
-	return b.spans
+	return b.spans, inferred
 }
 
 // readSessionLines picks session id's timing lines out of events. A tool call two lines describe
 // (its hook and the transcript backfill) is the hook's.
 func readSessionLines(events []why.Event, id string) sessionLines {
-	l := sessionLines{tools: map[string]*toolTime{}, launched: map[string][]string{}}
+	l := sessionLines{tools: map[string]*toolTime{}, launched: map[string][]string{}, handBack: map[string]bool{}}
 	seenCall := map[string]bool{}
 	for _, e := range events {
 		if e.SessionID != id {
@@ -155,6 +169,9 @@ func readSessionLines(events []why.Event, id string) sessionLines {
 		case eventDetail:
 			if e.MessageID != "" && e.Tools != nil {
 				l.launched[e.MessageID] = e.Tools
+			}
+			if e.MessageID != "" && e.StopReason == stopHandBack {
+				l.handBack[e.MessageID] = true
 			}
 		case eventOutcome:
 			l.outcomes = append(l.outcomes, toolTime{id: e.ToolUseID, tool: e.Tool, agent: e.AgentID, end: at,
@@ -256,7 +273,7 @@ func (b *spanBuilder) add(name string, start, end time.Time, parent string, attr
 // tool adds one tool call's span, with an execution below it saying how it ended, and returns
 // its id.
 func (b *spanBuilder) tool(t toolTime, parent string) string {
-	id := b.add(nameTool, t.start, t.end, parent, map[string]string{"tool_name": t.tool, "agent_id": t.agent})
+	id := b.add(nameTool, t.start, t.end, parent, map[string]string{"tool_name": t.tool, "agent_id": t.agent, "tool_use_id": t.id})
 	if ok := map[string]string{"ok": "true", "error": "false"}[t.result]; ok != "" {
 		b.add(toolExecution, t.start, t.end, id, map[string]string{"success": ok})
 	}
@@ -282,6 +299,54 @@ func (b *spanBuilder) turns(l sessionLines, tools []toolTime) []turnSpan {
 		out = append(out, turnSpan{id: b.add(nameTurn, p, end, "", nil), start: p, end: end})
 	}
 	return out
+}
+
+// inferredTurns adds a span per turn of a session with no prompt line: from its first main-agent
+// call's end to the main agent's last call or tool before the next turn's first call.
+func (b *spanBuilder) inferredTurns(l sessionLines, tools []toolTime) []turnSpan {
+	starts := inferredStarts(l)
+	out := make([]turnSpan, 0, len(starts))
+	for i, start := range starts {
+		var next time.Time
+		if i+1 < len(starts) {
+			next = starts[i+1]
+		}
+		in := func(t time.Time) bool { return t.After(start) && (next.IsZero() || t.Before(next)) }
+		end := start
+		for _, c := range l.calls {
+			if c.agent == "" && in(c.end) {
+				end = maxTime(end, c.end)
+			}
+		}
+		for _, t := range tools {
+			if t.agent == "" && in(t.end) {
+				end = maxTime(end, t.end)
+			}
+		}
+		out = append(out, turnSpan{id: b.add(nameTurn, start, end, "", nil), start: start, end: end})
+	}
+	return out
+}
+
+// inferredStarts is when each inferred turn began: the end of the main agent's first call, and of
+// its first call after each call that handed back.
+func inferredStarts(l sessionLines) []time.Time {
+	calls := slices.Clone(l.calls)
+	slices.SortStableFunc(calls, func(a, b callTime) int { return a.end.Compare(b.end) })
+	var starts []time.Time
+	open := false
+	for _, c := range calls {
+		if c.agent != "" {
+			continue
+		}
+		if !open {
+			starts, open = append(starts, c.end), true
+		}
+		if l.handBack[c.message] {
+			open = false
+		}
+	}
+	return starts
 }
 
 // turnEnd is when the turn prompted at p ended: the later of its turn.ended and the main

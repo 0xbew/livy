@@ -37,14 +37,21 @@ type LongPrompt struct {
 	Rates
 }
 
-// Model is one row of the table.
+// Model is one row of the table. Aliases are the model's other ids (the dated one, or the one
+// without a date). A call whose prompt is over PricedUpTo tokens (0 for no limit) is unpriced: the
+// vendor gives no rate for it.
 type Model struct {
-	Model string `json:"model"`
+	Model   string   `json:"model"`
+	Aliases []string `json:"aliases"`
 	Rates
 	LongPrompt *LongPrompt `json:"long_prompt"`
+	PricedUpTo int64       `json:"priced_up_to_tokens"`
 	Source     string      `json:"source"`
 	AsOf       string      `json:"as_of"`
 }
+
+// names is every id the row prices.
+func (m Model) names() []string { return append([]string{m.Model}, m.Aliases...) }
 
 // Table is the price table.
 type Table struct {
@@ -70,9 +77,10 @@ const (
 	UnpricedModel Unpriced = "model not in the price table"
 	UnpricedTier  Unpriced = "service tier other than standard"
 	UnpricedSpeed Unpriced = "speed other than standard"
+	UnpricedLong  Unpriced = "prompt longer than the vendor prices"
 )
 
-// Load is the table built into the binary, checked: every row names a model once, has a source
+// Load is the table built into the binary, checked: every id is named once, every row has a source
 // and a date, and no rate is negative or not a number.
 var Load = sync.OnceValues(func() (Table, error) { return parse(pricesJSON) })
 
@@ -83,10 +91,12 @@ func parse(data []byte) (Table, error) {
 	}
 	seen := map[string]bool{}
 	for _, m := range t.Models {
-		if m.Model == "" || seen[m.Model] || m.Source == "" || m.AsOf == "" {
-			return Table{}, fmt.Errorf("price table row %q: needs a model named once, a source and an as_of date", m.Model)
+		for _, name := range m.names() {
+			if name == "" || seen[name] || m.Source == "" || m.AsOf == "" {
+				return Table{}, fmt.Errorf("price table row %q: needs each id named once, a source and an as_of date", m.Model)
+			}
+			seen[name] = true
 		}
-		seen[m.Model] = true
 		rates := []Rates{m.Rates}
 		if m.LongPrompt != nil {
 			rates = append(rates, m.LongPrompt.Rates)
@@ -110,13 +120,16 @@ func (t Table) Cost(c Call) (float64, Unpriced) {
 	case c.Speed != "" && c.Speed != tierStandard:
 		return 0, UnpricedSpeed
 	}
-	i := slices.IndexFunc(t.Models, func(m Model) bool { return m.Model == c.Model })
+	i := slices.IndexFunc(t.Models, func(m Model) bool { return slices.Contains(m.names(), c.Model) })
 	if i < 0 {
 		return 0, UnpricedModel
 	}
 	m := t.Models[i]
 	r := m.Rates
 	prompt := c.Input + c.CacheRead + c.CacheWrite5m + c.CacheWrite1h + c.CacheWriteUnsplit
+	if m.PricedUpTo > 0 && prompt > m.PricedUpTo {
+		return 0, UnpricedLong
+	}
 	if m.LongPrompt != nil && prompt > m.LongPrompt.OverTokens {
 		r = m.LongPrompt.Rates
 	}

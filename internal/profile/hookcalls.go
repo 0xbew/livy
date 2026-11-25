@@ -86,6 +86,10 @@ func (p *agentPlacer) place(c, next callTime) placedCall {
 		end = start.Add(c.end.Add(truncation).Sub(start) / 2)
 	}
 	p.prevEnd, p.fed = maxTime(end, p.prevEnd), asked
+	if len(p.l.prompts) == 0 && p.l.handBack[c.message] {
+		// No prompt line says when the next turn began, so its first call has no start.
+		p.prevEnd, p.fed = time.Time{}, nil
+	}
 	c.end = end
 	return placedCall{callTime: c, start: start, placed: !start.IsZero()}
 }
