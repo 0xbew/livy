@@ -20,6 +20,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/0xbew/livy/internal/buildinfo"
 	"github.com/0xbew/livy/internal/clock"
@@ -64,6 +65,8 @@ type run struct {
 	git     *gitinfo.Git
 	path    string // the ledger file
 	size    int    // stdin bytes, carried on every error line
+	// started is when the hook process began: for an async hook, as close to its event as Livy sees.
+	started time.Time
 }
 
 // Run handles one hook invocation and returns the exit code, which is always 0.
@@ -78,7 +81,7 @@ func Run(args []string, stdin *os.File, stderr io.Writer) (code int) {
 			}
 		}
 	}()
-	r = &run{stderr: stderr, git: gitinfo.New(stderr), path: filepath.Join(dataDir(), ledger.FileName)}
+	r = &run{stderr: stderr, git: gitinfo.New(stderr), path: filepath.Join(dataDir(), ledger.FileName), started: clock.Now()}
 	r.git.Hosts = hosts(stderr)
 	args, r.harness = harnessFlag(args)
 	r.handle(args, stdin, true)
@@ -151,6 +154,9 @@ func (r *run) handle(args []string, stdin *os.File, enforceScope bool) {
 		r.errorEvent(fmt.Sprintf("%s (event %s still recorded)", p.problem, name), true)
 	}
 	rec := r.build(name, overrides, p)
+	if name == "tool.call" && p.obj != nil {
+		r.claudeToolCall(rec, p.obj)
+	}
 	if !r.append(rec) {
 		r.errorEvent("could not write event "+name, true)
 	}

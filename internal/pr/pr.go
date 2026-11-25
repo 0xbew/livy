@@ -35,6 +35,7 @@ const (
 	eventRecorded  = "commit.recorded"
 	eventRewritten = "commit.rewritten"
 	eventSkill     = "skill.loaded"
+	eventUsage     = "usage.api_call"
 )
 
 // gcPercent is the garbage collector's target while a document is built.
@@ -55,6 +56,8 @@ type Doc struct {
 	Profile profile.JSONReport `json:"profile"`
 	// Skills are the skill loads inside the commits' session windows, oldest first.
 	Skills []Skill `json:"skills"`
+	// Cost is the estimated API cost of the commits' windows at list prices, and their cache use.
+	Cost Cost `json:"cost"`
 }
 
 // Source says how the document's lines were read: "index", or "scan" (every line on the machine,
@@ -190,6 +193,7 @@ func assemble(o options, facts []why.Commit, ld loaded) Doc {
 	doc.Profile.Read.Summary = ld.read.Summary
 	doc.Profile.Read.Unread = append(append([]string{}, ld.read.Unread...), ld.spanRd.Unread...)
 	doc.Skills = skillsIn(explained, ld.events)
+	doc.Cost = costOf(explained, ld.events)
 	return doc
 }
 

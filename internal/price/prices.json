@@ -1,0 +1,36 @@
+{
+  "schema": "livy.prices/1",
+  "currency": "USD",
+  "unit": "per million tokens",
+  "note": "Vendor API list prices at the standard service tier and standard speed. A model not listed here is never priced.",
+  "models": [
+    {
+      "model": "claude-fable-5-2",
+      "input": 8, "output": 40, "cache_read": 0.20, "cache_write_5m": 10, "cache_write_1h": 16,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "as_of": "2026-11-24"
+    },
+    {
+      "model": "claude-opus-5-5",
+      "input": 4, "output": 20, "cache_read": 0.20, "cache_write_5m": 5, "cache_write_1h": 8,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "as_of": "2026-11-24"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "input": 2, "output": 10, "cache_read": 0.10, "cache_write_5m": 2.50, "cache_write_1h": 4,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "as_of": "2026-11-24"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "input": 0.10, "output": 0.50, "cache_read": 0.01, "cache_write_5m": 0.125, "cache_write_1h": 0.20,
+      "long_prompt": {
+        "over_tokens": 100000,
+        "input": 0.50, "output": 2.50, "cache_read": 0.05, "cache_write_5m": 0.625, "cache_write_1h": 1
+      },
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "as_of": "2026-11-24"
+    }
+  ]
+}

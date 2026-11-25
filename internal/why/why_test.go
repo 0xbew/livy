@@ -45,7 +45,9 @@ func TestExplain(t *testing.T) {
 		Sent:    []time.Time{at("2026-11-12T10:20:00Z"), at("2026-11-12T10:30:00Z")},
 		Tools:   map[string]int{"Bash": 2},
 		Models:  map[string]Usage{"claude-opus-5-5": {Calls: 1, Input: 10, Output: 5, CacheRead: 100}},
-		Ticket:  "PROJ-1",
+		Calls: []Call{{At: at("2026-11-12T10:24:00Z"), Model: "claude-opus-5-5", MessageID: "m1", RequestID: "r1",
+			Input: 10, Output: 5, CacheRead: 100}},
+		Ticket: "PROJ-1",
 	}}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Explain(ccc) =\n%+v\nwant\n%+v", got, want)

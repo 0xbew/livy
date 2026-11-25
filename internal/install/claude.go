@@ -117,13 +117,17 @@ func desiredHooks(bin string) map[string][]*object {
 	flush := func() *object { return entry(bin, "emit --extract --throttle "+throttleSeconds, 0, true) }
 	pr := hook("work.pr_opened")
 	pr.set("if", "Bash(gh pr create *)")
+	// Every tool call's timing, for `livy profile` where no OTEL reaches Livy. Async: the tool
+	// loop does not wait on it.
+	toolCall := func() *object { return entry(bin, "hook tool.call", 5, true) }
 	return map[string][]*object{
 		"SessionStart":     {group("startup|resume|clear|fork", hook("session.started"), entry(bin, "extract >/dev/null 2>&1", 0, true))},
 		"UserPromptSubmit": {group("", hook("prompt.submitted"), hook("skill.loaded"), flush())},
 		// Spot-checks are log-only and async: Claude Code never waits on the network, and
 		// without a Jev key the hook records nothing.
 		"PreToolUse":         {group("Bash|Agent|Task", entry(bin, "spotcheck", 30, true))},
-		"PostToolUse":        {group("Bash", pr), group("Skill", hook("skill.loaded")), group("", flush())},
+		"PostToolUse":        {group("Bash", pr), group("Skill", hook("skill.loaded")), group("", toolCall(), flush())},
+		"PostToolUseFailure": {group("", toolCall())},
 		"PostModelSwitch":    {group("", hook("model.switched"))},
 		"InstructionsLoaded": {group("", hook("instructions.loaded"))},
 		"Stop":               {group("", hook("turn.ended"), flush())},

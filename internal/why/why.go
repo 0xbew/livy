@@ -55,12 +55,24 @@ type Event struct {
 	Decision            string `json:"decision"`
 	DecisionSource      string `json:"decision_source"`
 	ToolUseID           string `json:"tool_use_id"`
-	AgentID             string `json:"agent_id"`
-	SubagentType        string `json:"subagent_type"`
-	InputTokens         int64  `json:"input_tokens"`
-	OutputTokens        int64  `json:"output_tokens"`
-	CacheReadTokens     int64  `json:"cache_read_input_tokens"`
-	CacheCreationTokens int64  `json:"cache_creation_input_tokens"`
+	// A tool.call line's times, to the millisecond, and the subagent an Agent call ran.
+	StartTS        string `json:"start_ts"`
+	EndTS          string `json:"end_ts"`
+	SpawnedAgentID string `json:"spawned_agent_id"`
+	// A call.detail line's tools: the tool calls that API message asked for, by name.
+	Tools               []string `json:"tools"`
+	Source              string   `json:"source"`
+	AgentID             string   `json:"agent_id"`
+	SubagentType        string   `json:"subagent_type"`
+	InputTokens         int64    `json:"input_tokens"`
+	OutputTokens        int64    `json:"output_tokens"`
+	CacheReadTokens     int64    `json:"cache_read_input_tokens"`
+	CacheCreationTokens int64    `json:"cache_creation_input_tokens"`
+	// The cache writes split by lifetime; nil when the line does not split them (Amp, Codex).
+	CacheCreation5mTokens *int64 `json:"cache_creation_5m_input_tokens"`
+	CacheCreation1hTokens *int64 `json:"cache_creation_1h_input_tokens"`
+	ServiceTier           string `json:"service_tier"`
+	Speed                 string `json:"speed"`
 	// A skill.loaded line's skill, as `livy pr` lists the skills a window loaded.
 	Skill      string `json:"skill"`
 	Scope      string `json:"scope"`
@@ -84,7 +96,9 @@ type Session struct {
 	Prompts  []string
 	Tools    map[string]int
 	Models   map[string]Usage
-	Ticket   string
+	// Calls are the window's API calls, each once, in time order: what `livy pr` prices.
+	Calls  []Call
+	Ticket string
 	// PerPrompt is what each prompt in the window caused, in time order.
 	PerPrompt []PromptSummary
 	// Sent is when each of Prompts was first sent, in the same order; zero when no line says.
@@ -98,6 +112,19 @@ type Session struct {
 
 // Usage is one model's calls and tokens.
 type Usage struct{ Calls, Input, Output, CacheRead, CacheWrite int64 }
+
+// Call is one usage.api_call line in a window: its tokens, and what decides its price.
+type Call struct {
+	At                    time.Time
+	Model                 string
+	AgentID               string
+	MessageID, RequestID  string
+	ServiceTier, Speed    string
+	Input, Output         int64
+	CacheRead, CacheWrite int64
+	// CacheWrite5m and CacheWrite1h split CacheWrite by lifetime; nil when the line does not.
+	CacheWrite5m, CacheWrite1h *int64
+}
 
 // Basis values: how a window's start was found.
 const (
@@ -246,7 +273,7 @@ func explainSession(c Commit, id string, at int, notPrevious map[string]bool, ev
 		s.Sent = append(s.Sent, firstSent(events, rec.PromptID))
 	}
 	s.splitBriefs(agentBriefs(events, id))
-	countUsage(s.Models, events, in)
+	s.Calls = countUsage(s.Models, events, in)
 	s.PerPrompt = summarize(events, in)
 	addTools(s.Tools, s.PerPrompt, events, in)
 	if s.Ticket == "" {
@@ -504,13 +531,17 @@ func addTools(into map[string]int, perPrompt []PromptSummary, events []Event, in
 	}
 }
 
-// countTools counts the tool calls by tool: tool.call lines, else tool.outcome lines.
+// countTools counts the tool calls by tool: tool.call lines, else tool.outcome lines. A call
+// both its hook and the transcript backfill wrote a line for counts once.
 func countTools(into map[string]int, events []Event, in func(int) bool) {
 	for _, kind := range []string{eventToolCall, eventToolResult} {
+		seen := map[string]bool{}
 		for i, e := range events {
-			if e.Event == kind && e.Tool != "" && in(i) {
-				into[e.Tool]++
+			if e.Event != kind || e.Tool == "" || !in(i) || (e.ToolUseID != "" && seen[e.ToolUseID]) {
+				continue
 			}
+			seen[e.ToolUseID] = true
+			into[e.Tool]++
 		}
 		if len(into) > 0 {
 			return
@@ -518,15 +549,22 @@ func countTools(into map[string]int, events []Event, in func(int) bool) {
 	}
 }
 
-// countUsage sums tokens per model, once per API call: a call extracted twice has the same
-// message and request id.
-func countUsage(into map[string]Usage, events []Event, in func(int) bool) {
+// countUsage sums tokens per model, once per API call (a call extracted twice has the same
+// message and request id), and returns the calls counted.
+func countUsage(into map[string]Usage, events []Event, in func(int) bool) []Call {
 	seen := map[[2]string]bool{}
+	var calls []Call
 	for i, e := range events {
 		if e.Event == eventUsage && in(i) && firstSeen(seen, e) {
 			addCall(into, e)
+			t, _ := parseTS(e.TS) // in() has parsed it
+			calls = append(calls, Call{At: t, Model: e.Model, AgentID: e.AgentID, MessageID: e.MessageID,
+				RequestID: e.RequestID, ServiceTier: e.ServiceTier, Speed: e.Speed, Input: e.InputTokens,
+				Output: e.OutputTokens, CacheRead: e.CacheReadTokens, CacheWrite: e.CacheCreationTokens,
+				CacheWrite5m: e.CacheCreation5mTokens, CacheWrite1h: e.CacheCreation1hTokens})
 		}
 	}
+	return calls
 }
 
 // firstSeen is false for an API call already counted: one extracted twice has the same message

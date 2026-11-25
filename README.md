@@ -351,6 +351,24 @@ only the lines the commits need from Livy's local index, so its cost follows the
 not the machine's history; the answer is the one `livy why` and `livy profile` give, except that
 it never looks a commit up as a squash merge on GitHub (`squash` is always null).
 
+`cost` is an estimate of what the pull request's API calls cost at the vendors' list prices:
+`estimated_usd`, `calls`, `unpriced_calls`, `unpriced_models` and `basis`, for the pull request
+(each call once) and for each commit's windows (`cost.commits[]`). Prices come from one table built
+into the binary, `internal/price/prices.json`, each row with its source and the date it was read. A
+call to a model the table lacks, or at a tier or speed other than standard, is counted as unpriced
+and never priced at $0 (`unpriced_models` names the unpriced calls' models, `basis` the reasons);
+`estimated_usd` is null when no call was priced. Cache writes are priced at
+the 5-minute or 1-hour rate the call records, and at the 5-minute rate when it records no split
+(`basis` says how many). Your plan or contract may bill differently.
+
+`cost` also says how well the calls reused the prompt cache, for the pull request and each commit:
+`cache_hit_rate` is cache reads over all input tokens (reads, writes and uncached input; null with
+none), and `cache_drops_mid_burst` (`count`, `tokens_rewritten`) is the calls that, under 5 minutes
+after the previous call on the same cache (one session's thread or subagent, one model) and with no
+compaction between them, wrote at least 10,000 tokens to the cache while reading back under half of
+what that call had cached; `tokens_rewritten` is the lost part of that prefix written again. A cache
+that expired over a longer idle gap is not counted, and no drop is priced.
+
 The index (`index/` in the data folder) keeps each ledger line and span a second time, in small
 files keyed by session, by repo and branch, and by commit sha. Every hook, extraction and the OTEL
 receiver add to it as they write; the daily job builds it when it is missing and prunes files

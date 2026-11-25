@@ -72,7 +72,7 @@ func b2i(b bool) int {
 // session writes one session's profile for the commit.
 func (r *report) session(s why.Session, indent string) {
 	w := windowOf(s)
-	p := Build(r.spans, w)
+	p, src := profileOf(r.spans, r.events, s)
 	r.windows++
 	r.placed += p.Placed
 	r.total += p.Total
@@ -92,6 +92,9 @@ func (r *report) session(s why.Session, indent string) {
 	r.wait += p.Wait
 	fmt.Fprintf(r.w, "%s  agent %s (model %s, tools %s), waiting on the human %s, other %s\n", indent,
 		dur(p.Busy), dur(p.Model), dur(p.Busy-p.Model), dur(p.Wait), dur(p.Other()))
+	if src == SourceHooks {
+		fmt.Fprintf(r.w, "%s  from hooks: no span for this window, so these times come from Livy's own ledger lines\n", indent)
+	}
 	fmt.Fprintf(r.w, "%s  spans: %d of %d in the tree\n", indent, p.Placed, p.Total)
 	for _, t := range p.Turns {
 		fmt.Fprintf(r.w, "%s  turn at %s  %s\n", indent, t.Start.Format(time.RFC3339), dur(t.Duration()))

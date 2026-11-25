@@ -83,6 +83,9 @@ type JSONSession struct {
 	// AgentBriefs how many agent-written briefs, as its agent_brief_ids.
 	Prompts     int `json:"prompts"`
 	AgentBriefs int `json:"agent_briefs"`
+	// TimingSource is where a timed window's times came from: "otel" (spans) or "hooks" (Livy's
+	// own ledger lines, when no span reached Livy); "" when the window is not timed.
+	TimingSource string `json:"timing_source"`
 }
 
 // JSONTurn is one turn, clipped to the window.
@@ -121,14 +124,16 @@ type JSONSpan struct {
 
 // JSONTotals are the sums over every timed window in the report.
 type JSONTotals struct {
-	Commits   int   `json:"commits"`
-	Windows   int   `json:"windows"`
-	Timed     int   `json:"timed"`
-	WallMS    int64 `json:"wall_ms"`
-	AgentMS   int64 `json:"agent_ms"`
-	WaitMS    int64 `json:"waiting_on_human_ms"`
-	Fixups    int   `json:"fixup_commits"`
-	Rewritten int   `json:"rewritten_commits"`
+	Commits int `json:"commits"`
+	Windows int `json:"windows"`
+	Timed   int `json:"timed"`
+	// TimedFromHooks is how many of the timed windows were timed from the ledger, not spans.
+	TimedFromHooks int   `json:"timed_from_hooks"`
+	WallMS         int64 `json:"wall_ms"`
+	AgentMS        int64 `json:"agent_ms"`
+	WaitMS         int64 `json:"waiting_on_human_ms"`
+	Fixups         int   `json:"fixup_commits"`
+	Rewritten      int   `json:"rewritten_commits"`
 }
 
 // JSONRead is what the report read: why's lines, the spans, and what could not be read.
@@ -180,7 +185,7 @@ func (b *jsonBuilder) commit(e why.Explained) JSONCommit {
 }
 
 func (b *jsonBuilder) session(s why.Session) JSONSession {
-	p := Build(b.spans, windowOf(s))
+	p, src := profileOf(b.spans, b.events, s)
 	b.totals.Windows++
 	kind, sha := why.BasisKind(s.Basis)
 	out := JSONSession{WindowBasisKind: kind, WindowBasisSHA: sha, ID: s.ID, Harness: s.Harness, WindowFrom: why.TimeOrNull(s.From), WindowTo: s.To.UTC(),
@@ -195,6 +200,8 @@ func (b *jsonBuilder) session(s why.Session) JSONSession {
 		return out
 	}
 	b.totals.Timed++
+	b.totals.TimedFromHooks += b2i(src == SourceHooks)
+	out.TimingSource = string(src)
 	b.totals.WallMS += p.Wall.Milliseconds()
 	b.totals.AgentMS += p.Busy.Milliseconds()
 	b.totals.WaitMS += p.Wait.Milliseconds()

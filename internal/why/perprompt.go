@@ -65,6 +65,21 @@ type builder struct {
 	byToolUse map[string]int  // tool use id -> the summary its tool.call or tool.outcome is in
 	decisions []placed        // tool decisions, with the summary their position gives
 	cur       int             // the prompt the last line belonged to, -1 before the first
+	calls     map[string]bool // tool use ids a tool.call line was counted for
+}
+
+// counted says whether a tool.call line for the call id was counted already (its hook and the
+// transcript backfill both write one), and marks it counted.
+func (b *builder) counted(id string) bool {
+	if id == "" {
+		return false
+	}
+	if b.calls == nil {
+		b.calls = map[string]bool{}
+	}
+	done := b.calls[id]
+	b.calls[id] = true
+	return done
 }
 
 // placed is a line and the summary its position gives it.
@@ -97,7 +112,7 @@ func (b *builder) add(e Event) int {
 	switch {
 	case e.Event == eventDetail && e.MessageID != "":
 		b.byMessage[e.MessageID] = b.detailOwner(e)
-	case e.Event == eventToolCall && e.Tool != "":
+	case e.Event == eventToolCall && e.Tool != "" && !b.counted(e.ToolUseID):
 		b.out[b.cur].Tools[e.Tool]++
 		b.out[b.cur].Results[orUnknown(e.Result)]++
 	case e.Event == eventToolResult && e.Tool != "":
