@@ -236,7 +236,7 @@ type extractPass struct {
 	scope        *extract.Scope
 	rd           *reader
 
-	seenMessages, seenInteractions, seenDetails, seenOutcomes, seenLinks map[string]bool
+	seenMessages, seenInteractions, seenDetails, seenOutcomes, seenLinks, seenSkills map[string]bool
 
 	unreadable int
 	dirty      int
@@ -276,6 +276,7 @@ func newExtractPass(o Options) (*extractPass, bool) {
 		seenDetails:      map[string]bool{},
 		seenOutcomes:     map[string]bool{},
 		seenLinks:        map[string]bool{},
+		seenSkills:       map[string]bool{},
 	}
 	if o.DryRun {
 		ps.state = loadState("", func(string) {})
@@ -397,6 +398,7 @@ func (ps *extractPass) readFile(tf file) *halt {
 	ps.interactionLines(p, fl)
 	ps.detailLines(p, fl)
 	ps.outcomeLines(p, fl)
+	ps.skillLines(p, fl, settled)
 	if ps.scope.TimeoutReads != timeoutsBefore {
 		ps.holdForScope(before, fl)
 		return nil
@@ -587,6 +589,9 @@ func (ps *extractPass) detailLines(p *parsed, fl *fileLines) {
 
 func (ps *extractPass) outcomeLines(p *parsed, fl *fileLines) {
 	for _, it := range p.outcomes {
+		if it.quiet {
+			continue // kept only for its skill
+		}
 		placed, ok := ps.outcomePlace(it)
 		if !ok {
 			continue
@@ -622,20 +627,29 @@ func (ps *extractPass) outcomeLines(p *parsed, fl *fileLines) {
 // outcomePlace is where an outcome's call ran: the repo it carried in, else its result's
 // working directory; false (counted) when that is unknown or out of scope.
 func (ps *extractPass) outcomePlace(it *outcomeItem) (extract.Placed, bool) {
-	cwd, haveCwd := cwdOf(it.where)
-	if it.carriedRepo == "" && !haveCwd {
-		ps.stats["unscoped_outcomes"]++
-		return extract.Placed{}, false
-	}
-	if it.carriedRepo != "" {
-		return extract.Placed{Repo: it.carriedRepo, KeepBranch: true}, true
-	}
-	placed, in := ps.scope.Place(cwd, haveCwd, []*extract.Named{it.named})
-	if !in {
-		ps.stats["outcomes_out_of_scope"]++
+	placed, why := ps.placeOutcome(it)
+	if why != "" {
+		ps.stats[why]++
 		return extract.Placed{}, false
 	}
 	return placed, true
+}
+
+// placeOutcome is outcomePlace without the counting: where the call ran, or the stat that says
+// why that is unknown or out of scope.
+func (ps *extractPass) placeOutcome(it *outcomeItem) (extract.Placed, string) {
+	cwd, haveCwd := cwdOf(it.where)
+	if it.carriedRepo == "" && !haveCwd {
+		return extract.Placed{}, "unscoped_outcomes"
+	}
+	if it.carriedRepo != "" {
+		return extract.Placed{Repo: it.carriedRepo, KeepBranch: true}, ""
+	}
+	placed, in := ps.scope.Place(cwd, haveCwd, []*extract.Named{it.named})
+	if !in {
+		return extract.Placed{}, "outcomes_out_of_scope"
+	}
+	return placed, ""
 }
 
 func report(stats Stats, scope *extract.Scope, w *extract.Writer, problems []string) {

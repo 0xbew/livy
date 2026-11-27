@@ -5,6 +5,7 @@ package claudecode
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -205,4 +206,96 @@ func TestPRLinkIsNotWrittenAgainAfterACutShortPass(t *testing.T) {
 	if n != 1 {
 		t.Errorf("the PR link was written %d times across two runs, want once", n)
 	}
+}
+
+// TestSkillUsedOutsideTheRepoIsRecorded guards the work Mac's "Skills loaded: 0" on every PR:
+// Claude Code started outside the repo, so the Skill hook (scoped by its folder) never wrote, and
+// an agent that read a SKILL.md with the Read tool was never counted. Each row is a subagent's
+// call shaped as Claude Code writes it (tool_use, tool_result, and for the Skill tool the
+// isMeta message naming the skill's folder); a skill used in no in-scope repo leaves nothing.
+func TestSkillUsedOutsideTheRepoIsRecorded(t *testing.T) {
+	type use struct{ skill, trigger, repo string }
+	for name, tc := range map[string]struct {
+		build func(repo, outside string) []map[string]any
+		want  []use
+		// grown is true when a pass runs first while the file may still grow, so the agent's next
+		// call (the last message) is left to the next pass.
+		grown bool
+	}{
+		"Skill tool from outside, the skill's folder in the repo": {func(repo, outside string) []map[string]any {
+			return skillCall(outside, "toolu_1", "Skill", map[string]any{"skill": "deploy"},
+				filepath.Join(repo, ".claude", "skills", "deploy"))
+		}, []use{{"deploy", "agent", "acme/app"}}, false},
+		"Read of the repo's SKILL.md from outside": {func(repo, outside string) []map[string]any {
+			return skillCall(outside, "toolu_2", "Read",
+				map[string]any{"file_path": filepath.Join(repo, ".claude", "skills", "review", "SKILL.md")}, "")
+		}, []use{{"review", "read", "acme/app"}}, false},
+		"a user skill from outside, placed by the agent's next call in the repo": {func(repo, outside string) []map[string]any {
+			recs := skillCall(outside, "toolu_3", "Skill", map[string]any{"skill": "notes"},
+				filepath.Join(outside, ".claude", "skills", "notes"))
+			next := assistant(repo, "m-next", 2, "2026-11-01T10:00:09.000Z")
+			next["agentId"], next["isSidechain"] = "a1", true
+			return append(recs, next)
+		}, []use{{"notes", "agent", "acme/app"}}, false},
+		"a user skill from outside, the agent's next call read in a later pass": {func(repo, outside string) []map[string]any {
+			recs := skillCall(outside, "toolu_6", "Skill", map[string]any{"skill": "notes"},
+				filepath.Join(outside, ".claude", "skills", "notes"))
+			next := assistant(repo, "m-next", 2, "2026-11-01T10:00:09.000Z")
+			next["agentId"], next["isSidechain"] = "a1", true
+			return append(recs, next)
+		}, []use{{"notes", "agent", "acme/app"}}, true},
+		"a user skill in a session with no in-scope call": {func(_, outside string) []map[string]any {
+			return skillCall(outside, "toolu_4", "Skill", map[string]any{"skill": "notes"},
+				filepath.Join(outside, ".claude", "skills", "notes"))
+		}, nil, false},
+		"a Skill call that failed": {func(repo, _ string) []map[string]any {
+			recs := skillCall(repo, "toolu_5", "Skill", map[string]any{"skill": "nope"}, "")
+			result := recs[1]["message"].(map[string]any)["content"].([]any)[0].(map[string]any)
+			result["is_error"], result["content"] = true, "<tool_use_error>Unknown skill: nope</tool_use_error>"
+			return recs
+		}, nil, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			repo, root, data := setup(t)
+			outside := filepath.Join(filepath.Dir(repo), "outside")
+			if err := os.MkdirAll(outside, 0o777); err != nil {
+				t.Fatal(err)
+			}
+			writeLines(t, filepath.Join(root, "-p", "s1", "subagents", "agent-a1.jsonl"), tc.build(repo, outside)...)
+			if tc.grown {
+				run(t, root, data, time.Now())
+			}
+			run(t, root, data, time.Now().Add(time.Hour)) // the file has settled
+			var got []use
+			for _, l := range ledgerLines(t, data) {
+				if l["event"] == "skill.loaded" {
+					got = append(got, use{l["skill"].(string), l["trigger"].(string), l["repo"].(string)})
+				}
+			}
+			if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+				t.Errorf("skill.loaded lines %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// skillCall is a subagent's tool call at cwd and its result, then, for a
+// Skill call whose skill is in dir, the message Claude Code adds naming that folder.
+func skillCall(cwd, id, tool string, input map[string]any, dir string) []map[string]any {
+	call := assistant(cwd, "m-"+id, 3, "2026-11-01T10:00:01.000Z")
+	call["agentId"], call["isSidechain"] = "a1", true
+	call["message"].(map[string]any)["content"] = []any{map[string]any{"type": "tool_use", "id": id, "name": tool, "input": input}}
+	result := map[string]any{"type": "tool_result", "tool_use_id": id, "content": "Launching skill"}
+	user := func(ts string, content []any) map[string]any {
+		return map[string]any{"type": "user", "cwd": cwd, "sessionId": "s1", "agentId": "a1", "isSidechain": true,
+			"version": "2.1.0", "timestamp": ts, "message": map[string]any{"role": "user", "content": content}}
+	}
+	out := []map[string]any{call, user("2026-11-01T10:00:02.000Z", []any{result})}
+	if dir != "" {
+		meta := user("2026-11-01T10:00:02.000Z", []any{map[string]any{"type": "text",
+			"text": "Base directory for this skill: " + dir + "\n\n# The skill's text"}})
+		meta["isMeta"], meta["sourceToolUseID"] = true, id
+		out = append(out, meta)
+	}
+	return out
 }

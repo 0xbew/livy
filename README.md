@@ -44,6 +44,13 @@ what a fast judgment model would decide about the agent's next move.
   hash, and a `ledger.error` says why. A typed `/name` is recorded only when a SKILL.md for it is
   on disk: otherwise it is a built-in command or ordinary text. Amp names the folder it loaded a
   skill from, so its loads are hashed from that folder, built-in ones too (`scope` `builtin`).
+  Extraction also writes a Claude Code agent's skill uses from its transcript (`source`
+  `transcript`): each Skill tool call that worked (`trigger` `agent`) and each Read of a
+  `skills/<name>/SKILL.md` (`trigger` `read`), with no hash. It catches what the hook cannot see: a
+  session started outside the repo (its hooks are scoped by that folder) and an agent that reads a
+  skill instead of calling it. A use is placed by the call's folder or the folder it named, else by
+  the skill's folder in an in-scope repo, else by the same agent's next call (waiting for it while
+  the transcript may still grow); with none it is out of scope and leaves nothing. Readers keep one line per use (the hook's, when both wrote one).
 - **Never records** prompt or reply text, tool inputs or outputs, shell commands, the
   working folder, transcript paths, or a PR number read from `gh pr create` output.
   (Prompt text is kept only in the local vault below, never in the ledger, and never sent from it.)
@@ -319,6 +326,13 @@ reads the OTEL spans Livy's receiver keeps (on by default, Claude Code and Codex
 on this machine only, and prints names, durations and counts, never prompt or tool text. A window
 with no turn span (OTEL off, or the receiver down) gets its wall time only.
 
+Agent time is split by who was working: the session's own tool calls, then its own model calls,
+then subagents for the rest. Timed from Livy's ledger lines, a model call begins at the last thing
+its agent waited on; a call that would then have run longer than 60 s plus 0.1 s per token it
+wrote has an unknown start (its agent waited on something no line records: a call left out as out
+of scope, a background subagent, a wake-up), so its time is left out rather than read as model
+time.
+
 ## Machine-readable output (`--json`)
 
 `livy why --json` and `livy profile --json` write one JSON document to stdout instead of text, for
@@ -342,7 +356,10 @@ the text report's: 1 when `read.unread` names something that could not be read.
 - `livy.profile/1`: `commits[]` (`sha`, `committed`, `rework`, `sessions[]` with the window and its `window_basis_kind` and `window_basis_sha`,
   `start`, `wall_ms`, `timed`, `turns_inferred` (true when a window timed from Livy's hooks has no
   prompt line: each turn runs from its first call to its last, and the wait before it holds its
-  first call), `agent_ms`, `model_ms`, `waiting_on_human_ms`, `other_ms`,
+  first call), `agent_ms`, `model_ms` (every model call, subagents' included, so it can overlap
+  tool time), `split` (`agent_ms` cut three ways that sum to it: `tool_ms`, the session's own tool
+  calls; `model_ms`, its own model calls outside them; `subagent_ms`, the time only subagents
+  worked; summed in `totals`), `waiting_on_human_ms`, `other_ms`,
   `turns`, span counts, the `longest` spans (`kind`: `model`, `tool` or `subagent`; `name`;
   `agent`: `main` or the subagent's id, `agent_type` when the ledger names it; `starts_agent`, the
   subagent a `subagent` span ran; `outcome`: `ok`, `failed`, `rejected` or `""` when the spans do not
@@ -360,7 +377,7 @@ the text report's: 1 when `read.unread` names something that could not be read.
   line matches); `agents[]`, one lane per agent (`id`, `type`, `launched_by`: the span that ran it,
   `parent`: that span's agent; `label`: its task label, when kept); a tool or subagent span's
   `target` is its kept tool target (above), `""` when none; and `markers[]` (`kind` `skill` or `compaction`, `ts`, `agent`,
-  `name`: the skill).
+  `name`: the skill, `method`: as `livy pr`'s `skills[]`).
   `--top N` sets how many spans `longest` lists. The span tree is in the text report only.
 
   A call's `cache` (`class`, `cause`, `previous_prefix`, `tokens_rewritten`, `gap_ms`,
@@ -385,7 +402,9 @@ livy reindex                                                     # build or rebu
 `livy pr --json` writes one `livy.pr/1` document for a pull request's commits: `why` (a
 `livy.why/1` document), `profile` (a `livy.profile/1` document; `--top N` as there), `skills[]` (each
 `skill.loaded` line inside a commit's window: `ts`, `session_id`, `agent_id`, `skill`, `scope`,
-`trigger`, `sha256`, `tree_sha256`, and the `commits` whose windows hold it), and `source`. It reads
+`trigger`, `sha256`, `tree_sha256`, the `commits` whose windows hold it, `method`: how the skill
+was used, `skill_tool`, `read` or `slash`, and `source`: `hook` or `transcript`; one entry per use),
+and `source`. It reads
 only the lines the commits need from Livy's local index, so its cost follows the pull request,
 not the machine's history; the answer is the one `livy why` and `livy profile` give, except that
 it never looks a commit up as a squash merge on GitHub (`squash` is always null).
@@ -408,6 +427,17 @@ none); `cache_classes` counts the calls by cache class (and `unclassified`, a ca
 `tokens_rewritten`) is the `unexplained` misses under 5 minutes after the previous call that wrote
 at least 10,000 tokens to the cache while reading back under half of the previous prefix. No miss
 is priced.
+
+`empty_windows[]` lists each commit's session window with no model call in the ledger (`commit`,
+`session_id`, `kind`, `reason`), so a reader shows that window's calls, tools and time as unknown,
+never as 0. `kind` is `not_extracted` (the session's transcript on this machine has calls in the
+window the extractor has not read yet: run `livy extract`), `out_of_scope` (they were read, but worked
+outside every in-scope repo), `no_calls` (the transcript has no model call in the window: a commit by
+a hook, a script or a command the model did not run), `no_transcript` (no transcript of the session
+on this machine: another machine, or an app whose transcripts Livy does not read), `harness` (a
+Codex or other session whose usage Livy reads another way) or `unreadable` (no call was found, but a
+transcript could not be read in full, so the cause is unknown). It reads the session's transcripts for
+their model calls' ids and times only, never their text.
 
 The index (`index/` in the data folder) keeps each ledger line and span a second time, in small
 files keyed by session, by repo and branch, and by commit sha. Every hook, extraction and the OTEL

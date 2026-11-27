@@ -90,8 +90,8 @@ func (r *report) session(s why.Session, indent string) {
 	r.wall += p.Wall
 	r.busy += p.Busy
 	r.wait += p.Wait
-	fmt.Fprintf(r.w, "%s  agent %s (model %s, tools %s), waiting on the human %s, other %s\n", indent,
-		dur(p.Busy), dur(p.Model), dur(p.Busy-p.Model), dur(p.Wait), dur(p.Other()))
+	fmt.Fprintf(r.w, "%s  agent %s (model %s, tools %s, subagents %s), waiting on the human %s, other %s\n", indent,
+		dur(p.Busy), dur(p.Split.Model), dur(p.Split.Tools), dur(p.Split.Subagents), dur(p.Wait), dur(p.Other()))
 	if src == SourceHooks {
 		fmt.Fprintf(r.w, "%s  from hooks: no span for this window, so these times come from Livy's own ledger lines\n", indent)
 	}

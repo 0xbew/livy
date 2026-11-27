@@ -56,6 +56,10 @@ type transcriptScan struct {
 	callAt          map[string]callWhere
 	outcomeItems    []*outcomeItem
 	enteredOutcomes bool
+	// skillUses are the calls that used a skill, by id; skillDirs the folder Claude Code said a
+	// Skill call's skill is in, by the call's id.
+	skillUses map[string]skillUse
+	skillDirs map[string]string
 
 	// usage
 	spans                   map[string][2]int
@@ -95,6 +99,8 @@ func (rd *reader) newScan(start, interactionStart, detailStart, outcomeStart int
 		names:            map[string]nameAt{},
 		resolved:         map[string]int{},
 		callAt:           map[string]callWhere{},
+		skillUses:        map[string]skillUse{},
+		skillDirs:        map[string]string{},
 		spans:            map[string][2]int{},
 		best:             map[string]*kept{},
 		details:          map[string]*detail{},
@@ -108,6 +114,10 @@ func (s *transcriptScan) loadCarries(carry, detailCarry, outcomeCarryIn any) {
 	}
 	for k, v := range s.carriedNames {
 		s.names[k] = nameAt{v, -1}
+	}
+	if s.outcomeStart > 0 {
+		s.skillUses = carriedSkills(outcomeCarryIn, s.carriedNames)
+		s.res.outcomes = waitingSkills(outcomeCarryIn)
 	}
 	if s.interactionStart > 0 {
 		s.ctx, s.afterError = s.rd.interactionCarry(carry)
@@ -328,6 +338,9 @@ func (s *transcriptScan) noteCalls(rec map[string]any, kind string, index int, l
 		s.noteToolUses(rec, content, index)
 	case "user":
 		s.noteToolResults(rec, content, index, inOutcomes)
+		if id, dir := skillDirOf(rec, content); id != "" {
+			s.skillDirs[id] = dir
+		}
 	}
 }
 
@@ -344,6 +357,9 @@ func (s *transcriptScan) noteToolUses(rec map[string]any, content []any, index i
 		}
 		s.names[id] = nameAt{name, index}
 		cwd, ok := cwdOf(rec)
+		if u, used := skillUseOf(name, block["input"], cwd); used {
+			s.skillUses[id] = u
+		}
 		if !ok {
 			continue
 		}
@@ -388,7 +404,8 @@ func resultItem(block map[string]any, index int, where map[string]any, id string
 	for _, t := range specialTools {
 		as[t] = classify(block, t)
 	}
-	return &outcomeItem{index: index, where: where, toolUseID: id, asSpecial: as, asOther: classify(block, "")}
+	return &outcomeItem{index: index, where: where, toolUseID: id, asSpecial: as, asOther: classify(block, ""),
+		isError: block["is_error"] == true}
 }
 
 func (s *transcriptScan) noteLink(rec map[string]any, index int) {
@@ -535,7 +552,11 @@ func (s *transcriptScan) keepOutcomes(c int) {
 		if it.index >= c {
 			continue
 		}
-		if fin := s.rd.finishOutcome(it, s.nameOf, s.callAt, s.carriedWhere, s.elsewhere); fin != nil {
+		fin := s.rd.finishOutcome(it, s.nameOf, s.callAt, s.carriedWhere, s.elsewhere)
+		if fin == nil {
+			continue
+		}
+		if fin.skill = s.skillOf(fin.toolUseID); !fin.quiet || fin.skill != nil {
 			s.res.outcomes = append(s.res.outcomes, fin)
 		}
 	}
@@ -573,18 +594,21 @@ func (s *transcriptScan) outcomeCarryAt(c int) map[string]any {
 		pending = append(pending, pendingCall{na.at, id, na.name})
 	}
 	pending = newestPending(pending)
-	pm, sm := map[string]any{}, map[string]any{}
+	pm, sm, sk := map[string]any{}, map[string]any{}, map[string]any{}
 	for _, p := range pending {
 		pm[p.id] = p.name
 		if st, ok := started[p.id]; ok {
 			sm[p.id] = st
+		}
+		if u := s.skillOf(p.id); u != nil {
+			sk[p.id] = []any{u.trigger, u.name, u.dir}
 		}
 	}
 	hashes := sortedKeys(out)
 	if len(hashes) > outcomeCarryCap {
 		hashes = hashes[:outcomeCarryCap]
 	}
-	return map[string]any{"pending": pm, "started": sm, "elsewhere": stringsAny(hashes)}
+	return map[string]any{"pending": pm, "started": sm, "elsewhere": stringsAny(hashes), "skills": sk}
 }
 
 // startOf is where a pending call started ([repo, branch], nil when unknown), and false when
@@ -631,14 +655,17 @@ func newestPending(pending []pendingCall) []pendingCall {
 // carriedOutcomeCarry passes the last pass's carry on unchanged when no line reached the
 // outcome offset.
 func (s *transcriptScan) carriedOutcomeCarry() map[string]any {
-	pm, sm := map[string]any{}, map[string]any{}
+	pm, sm, sk := map[string]any{}, map[string]any{}, map[string]any{}
 	for k, v := range s.carriedNames {
 		pm[k] = v
+		if u := s.skillOf(k); u != nil {
+			sk[k] = []any{u.trigger, u.name, u.dir}
+		}
 	}
 	for k, v := range s.carriedWhere {
 		sm[k] = []any{v[0], nilIfEmpty(v[1])}
 	}
-	return map[string]any{"pending": pm, "started": sm, "elsewhere": stringsAny(sortedKeys(s.elsewhere))}
+	return map[string]any{"pending": pm, "started": sm, "elsewhere": stringsAny(sortedKeys(s.elsewhere)), "skills": sk}
 }
 
 func sortedKeys(m map[string]bool) []string {

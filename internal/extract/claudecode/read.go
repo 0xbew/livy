@@ -148,6 +148,10 @@ type outcomeItem struct {
 	unnamed     bool
 	carriedRepo string
 	named       *extract.Named
+	// quiet is a call with no outcome to write; isError the result's is_error; skill the skill
+	// the call used, nil for none.
+	quiet, isError bool
+	skill          *skillUse
 }
 
 type callWhere struct {
@@ -817,7 +821,8 @@ func (rd *reader) finishOutcome(it *outcomeItem, nameOf func(string) (string, bo
 			it.skip = "unnamed"
 			return it
 		}
-		return nil
+		it.quiet = true // no outcome to write; kept for the skill it may have used
+		return it
 	}
 	it.tool, it.result, it.unnamed = tool, d, !named
 	return it

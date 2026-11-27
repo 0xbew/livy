@@ -84,10 +84,11 @@ type toolTime struct {
 	fromHook                         bool
 }
 
-// callTime is one model call as the ledger times it: when it ended.
+// callTime is one model call as the ledger times it: when it ended, and how many tokens it wrote.
 type callTime struct {
 	agent, model, message, request string
 	end                            time.Time
+	output                         int64
 }
 
 // sessionLines are one session's ledger lines that time it.
@@ -163,7 +164,8 @@ func readSessionLines(events []why.Event, id string) sessionLines {
 				continue
 			}
 			seenCall[e.MessageID] = true
-			l.calls = append(l.calls, callTime{agent: e.AgentID, model: e.Model, message: e.MessageID, request: e.RequestID, end: at})
+			l.calls = append(l.calls, callTime{agent: e.AgentID, model: e.Model, message: e.MessageID, request: e.RequestID, end: at,
+				output: e.OutputTokens})
 		case eventTool:
 			l.addToolCall(e)
 		case eventDetail:

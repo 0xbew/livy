@@ -14,6 +14,21 @@ import (
 // truncation is how much of a call's end usage.api_call's whole-second timestamp can hide.
 const truncation = time.Second
 
+// A call can take at most callFloor plus one callPerOutput per token it wrote. A start that makes
+// it longer is not its start: its agent was waiting on something no line records (a call the
+// ledger left out as out of scope, a background subagent, a scheduled wake-up), so the call's
+// start is unknown. Claude Code's own api_request events put the slowest calls near 30 s plus
+// 10 ms a token; this bound is ten times slower.
+const (
+	callFloor     = 60 * time.Second
+	callPerOutput = 100 * time.Millisecond
+)
+
+// plausible is whether a call that wrote output tokens could have run from start to end.
+func plausible(start, end time.Time, output int64) bool {
+	return end.Sub(start) <= callFloor+time.Duration(output)*callPerOutput
+}
+
 // placedCall is one model call with its start; placed is false when nothing says when it began.
 type placedCall struct {
 	callTime
@@ -91,7 +106,7 @@ func (p *agentPlacer) place(c, next callTime) placedCall {
 		p.prevEnd, p.fed = time.Time{}, nil
 	}
 	c.end = end
-	return placedCall{callTime: c, start: start, placed: !start.IsZero()}
+	return placedCall{callTime: c, start: start, placed: !start.IsZero() && plausible(start, end, c.output)}
 }
 
 // asked is the tools call c asked for, each started after the previous call ended. When its

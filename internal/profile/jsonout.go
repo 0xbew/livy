@@ -95,6 +95,17 @@ type JSONSession struct {
 	Spans   []JSONTraceSpan `json:"spans"`
 	Agents  []JSONAgent     `json:"agents"`
 	Markers []JSONMarker    `json:"markers"`
+	// Split is AgentMS cut three ways that sum to it (profile.Split): the session's own tool calls,
+	// its model calls, and the time only subagents worked. ModelMS is every model call, subagents'
+	// included, so it can cover tool time. Zero when not Timed.
+	Split JSONSplit `json:"split"`
+}
+
+// JSONSplit is a window's agent time by who was working, as profile.Split says it.
+type JSONSplit struct {
+	ToolMS     int64 `json:"tool_ms"`
+	ModelMS    int64 `json:"model_ms"`
+	SubagentMS int64 `json:"subagent_ms"`
 }
 
 // JSONTurn is one turn, clipped to the window.
@@ -143,6 +154,8 @@ type JSONTotals struct {
 	WaitMS         int64 `json:"waiting_on_human_ms"`
 	Fixups         int   `json:"fixup_commits"`
 	Rewritten      int   `json:"rewritten_commits"`
+	// Split is the timed windows' splits, summed.
+	Split JSONSplit `json:"split"`
 }
 
 // JSONRead is what the report read: why's lines, the spans, and what could not be read.
@@ -223,6 +236,12 @@ func (b *jsonBuilder) session(s why.Session) JSONSession {
 	b.totals.AgentMS += p.Busy.Milliseconds()
 	b.totals.WaitMS += p.Wait.Milliseconds()
 	out.AgentMS, out.ModelMS, out.WaitMS, out.OtherMS = p.Busy.Milliseconds(), p.Model.Milliseconds(), p.Wait.Milliseconds(), p.Other().Milliseconds()
+	// The third part is the remainder, so the parts sum to agent_ms after each is rounded down.
+	out.Split = JSONSplit{ToolMS: p.Split.Tools.Milliseconds(), ModelMS: p.Split.Model.Milliseconds()}
+	out.Split.SubagentMS = out.AgentMS - out.Split.ToolMS - out.Split.ModelMS
+	b.totals.Split.ToolMS += out.Split.ToolMS
+	b.totals.Split.ModelMS += out.Split.ModelMS
+	b.totals.Split.SubagentMS += out.Split.SubagentMS
 	out.Spans, out.Agents, out.Markers = b.traceOf(p, s.ID)
 	for _, n := range longestOf(p, b.top) {
 		out.Longest = append(out.Longest, b.span(n))

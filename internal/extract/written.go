@@ -89,7 +89,7 @@ func LineKey(line map[string]any) string {
 			id = stringOf(line["session_id"]) + "|" + stringOf(line["pr_repository"]) + "|" + strconv.FormatInt(n, 10)
 		}
 	} else if field := map[string]string{"usage.api_call": "message_id", "call.detail": "message_id",
-		"interaction": "interaction_id", "tool.outcome": "tool_use_id"}[event]; field != "" {
+		"interaction": "interaction_id", "tool.outcome": "tool_use_id", "skill.loaded": "tool_use_id"}[event]; field != "" {
 		id = stringOf(line[field])
 	}
 	if id == "" {

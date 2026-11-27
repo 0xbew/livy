@@ -498,7 +498,8 @@
    "type": "string",
    "enum": [
     "agent",
-    "slash"
+    "slash",
+    "read"
    ]
   },
   "scope": {

@@ -24,6 +24,8 @@ type Profile struct {
 	// model calls, Wait the time waiting on the human: between turns or for an approval.
 	Wall, Busy, Model, Wait time.Duration
 	Turns                   []*Node
+	// Split is Busy cut three ways that never overlap and sum to it.
+	Split Split
 	// Waits are the stretches that make up Wait, oldest first.
 	Waits []Wait
 	// Placed of Total: the session's spans in the window, and how many sit under a turn.
@@ -32,6 +34,14 @@ type Profile struct {
 	Timed bool
 	// TurnsInferred is true when the turns were inferred from the calls, for want of a prompt line.
 	TurnsInferred bool
+}
+
+// Split is a window's agent time by who was working, the session's own agent first: its tool
+// calls (an Agent call aside), then its model calls, then any subagent (an Agent call running, or a
+// subagent's own calls) while the session's agent did neither. A tool call's time is never also
+// model time, and time only subagents worked is theirs, not the session's model's.
+type Split struct {
+	Tools, Model, Subagents time.Duration
 }
 
 // Other is wall time that is neither agent time nor waiting on the human: the harness's own
@@ -134,6 +144,7 @@ func Build(spans []Span, w Window) Profile {
 		turnTimes = append(turnTimes, clip(t, p.Start, p.End))
 	}
 	var model, tool, wait intervals
+	var lanes laneTimes
 	for _, s := range members {
 		if !overlaps(s, p.Start, p.End) {
 			continue
@@ -141,10 +152,14 @@ func Build(spans []Span, w Window) Profile {
 		p.Total++
 		switch s.Kind() {
 		case KindModel:
-			model = append(model, clip(s, p.Start, p.End))
+			iv := clip(s, p.Start, p.End)
+			model = append(model, iv)
+			lanes.add(f, s, intervals{iv})
 		case KindTool:
 			// An approval wait blocks its own tool (and a subagent above it), not other work.
-			tool = append(tool, intervals{clip(s, p.Start, p.End)}.minus(f.waitsUnder(s, p.Start, p.End))...)
+			ivs := intervals{clip(s, p.Start, p.End)}.minus(f.waitsUnder(s, p.Start, p.End))
+			tool = append(tool, ivs...)
+			lanes.add(f, s, ivs)
 		case KindWait:
 			wait = append(wait, clip(s, p.Start, p.End))
 		}
@@ -158,6 +173,7 @@ func Build(spans []Span, w Window) Profile {
 	between := intervals{{p.Start, p.End}}.minus(turnTimes.union())
 	p.Busy = busy.length()
 	p.Model = model.union().length()
+	p.Split = lanes.split(busy)
 	p.Wait = append(wait, between...).union().minus(busy).length()
 	p.Waits = waitsOf(between, wait, busy)
 	return p

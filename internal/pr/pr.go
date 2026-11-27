@@ -6,6 +6,7 @@
 package pr
 
 import (
+	"cmp"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0xbew/livy/internal/emptywin"
+	"github.com/0xbew/livy/internal/extract/cli"
 	"github.com/0xbew/livy/internal/profile"
 	"github.com/0xbew/livy/internal/tooltarget"
 	"github.com/0xbew/livy/internal/why"
@@ -35,7 +38,7 @@ const (
 const (
 	eventRecorded  = "commit.recorded"
 	eventRewritten = "commit.rewritten"
-	eventSkill     = "skill.loaded"
+	sourceHook     = "hook"
 	eventUsage     = "usage.api_call"
 )
 
@@ -59,6 +62,19 @@ type Doc struct {
 	Skills []Skill `json:"skills"`
 	// Cost is the estimated API cost of the commits' windows at list prices, and their cache use.
 	Cost Cost `json:"cost"`
+	// EmptyWindows are the commits' session windows with no model call in the ledger, each with why,
+	// so a reader says the window's calls, tools and time are unknown and why, never 0.
+	EmptyWindows []EmptyWindow `json:"empty_windows"`
+}
+
+// EmptyWindow is one session window with no model call line: the commit and session, a fixed
+// kind ("not_extracted", "out_of_scope", "no_calls", "no_transcript", "harness" or "unreadable") and the reason
+// in words.
+type EmptyWindow struct {
+	Commit    string `json:"commit"`
+	SessionID string `json:"session_id"`
+	Kind      string `json:"kind"`
+	Reason    string `json:"reason"`
 }
 
 // Source says how the document's lines were read: "index", or "scan" (every line on the machine,
@@ -71,8 +87,9 @@ type Source struct {
 	Files int `json:"index_files"`
 }
 
-// Skill is one skill.loaded line inside a window: when, by which session and agent, and the
-// SKILL.md's hash (never its text). Commits are the commits whose windows hold it.
+// Skill is one skill use inside a window: when, by which session and agent, how it was used, and
+// the SKILL.md's hash (never its text) when the hook saw it load. Commits are the commits whose
+// windows hold it.
 type Skill struct {
 	At         time.Time `json:"ts"`
 	SessionID  string    `json:"session_id"`
@@ -84,6 +101,11 @@ type Skill struct {
 	SHA256     string    `json:"sha256"`
 	TreeSHA256 string    `json:"tree_sha256"`
 	Commits    []string  `json:"commits"`
+	// Method is how the skill was used: "skill_tool" (the agent called the Skill tool), "read" (it
+	// read the skill's SKILL.md with the Read tool) or "slash" (a person typed /name); "" for a
+	// trigger this build does not know. Source is the line's writer: "hook" or "transcript".
+	Method string `json:"method"`
+	Source string `json:"source"`
 }
 
 type options struct {
@@ -180,7 +202,8 @@ func build(o options) (Doc, error) {
 // assemble explains each commit from what was read and puts the document together.
 func assemble(o options, facts []why.Commit, ld loaded) Doc {
 	explained := make([]why.Explained, len(facts))
-	doc := Doc{Schema: Schema, Repo: o.repo, Branch: o.branch, Commits: []string{}, Source: ld.source, Skills: []Skill{}}
+	doc := Doc{Schema: Schema, Repo: o.repo, Branch: o.branch, Commits: []string{}, Source: ld.source, Skills: []Skill{},
+		EmptyWindows: []EmptyWindow{}}
 	each(len(facts), func(i int) { explained[i] = why.Explained{Commit: facts[i], Report: why.Explain(facts[i], ld.events)} })
 	for _, c := range facts {
 		doc.Commits = append(doc.Commits, c.SHA)
@@ -191,6 +214,7 @@ func assemble(o options, facts []why.Commit, ld loaded) Doc {
 	}
 	targets, _ := tooltarget.Read(dataDir(), profile.SessionsOf(explained))
 	doc.Profile = profile.Report(explained, ld.events, ld.spans, o.top, targets)
+	doc.EmptyWindows = emptyWindows(explained, emptywin.New(dataDir(), cli.Roots(nil)))
 	doc.Profile.Read = ld.spanRd
 	doc.Profile.Read.Summary = ld.read.Summary
 	doc.Profile.Read.Unread = append(append([]string{}, ld.read.Unread...), ld.spanRd.Unread...)
@@ -216,21 +240,19 @@ func each(n int, f func(int)) {
 	wg.Wait()
 }
 
-// skillsIn is the skill loads inside the commits' windows: by the window's session, after its
+// skillsIn is the skill uses inside the commits' windows, each once: by the window's session, after its
 // start (when it has one) and up to its end.
 func skillsIn(explained []why.Explained, events []why.Event) []Skill {
 	out := []Skill{}
-	for _, e := range events {
-		if e.Event != eventSkill {
-			continue
-		}
+	for _, e := range why.SkillLoads(events) {
 		t, ok := why.ParseTS(e.TS)
 		if !ok {
 			continue
 		}
 		if commits := windowsHolding(explained, e.SessionID, t); len(commits) > 0 {
 			out = append(out, Skill{At: t, SessionID: e.SessionID, AgentID: e.AgentID, Repo: e.Repo, Skill: e.Skill,
-				Scope: e.Scope, Trigger: e.Trigger, SHA256: e.SHA256, TreeSHA256: e.TreeSHA256, Commits: commits})
+				Scope: e.Scope, Trigger: e.Trigger, SHA256: e.SHA256, TreeSHA256: e.TreeSHA256, Commits: commits,
+				Method: why.SkillMethod(e.Trigger), Source: cmp.Or(e.Source, sourceHook)})
 		}
 	}
 	slices.SortStableFunc(out, func(a, b Skill) int { return a.At.Compare(b.At) })
@@ -246,6 +268,20 @@ func windowsHolding(explained []why.Explained, session string, t time.Time) []st
 			in := s.ID == session && (s.From.IsZero() || t.After(s.From)) && !t.After(s.To)
 			if in && !slices.Contains(out, ex.Commit.SHA) {
 				out = append(out, ex.Commit.SHA)
+			}
+		}
+	}
+	return out
+}
+
+// emptyWindows is each window of the commits with no model call, with why it is empty.
+func emptyWindows(explained []why.Explained, x *emptywin.Explainer) []EmptyWindow {
+	out := []EmptyWindow{}
+	for _, e := range explained {
+		for _, s := range e.Report.Sessions {
+			if len(s.Calls) == 0 {
+				f := x.Explain(s)
+				out = append(out, EmptyWindow{Commit: e.Commit.SHA, SessionID: s.ID, Kind: f.Kind, Reason: f.Reason})
 			}
 		}
 	}

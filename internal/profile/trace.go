@@ -28,7 +28,6 @@ const (
 const (
 	markerSkill      = "skill"
 	markerCompaction = "compaction"
-	eventSkillLoaded = "skill.loaded"
 	eventInteraction = "interaction"
 	kindCompacted    = "compacted"
 )
@@ -95,12 +94,14 @@ type JSONAgent struct {
 	Parent     string `json:"parent"`
 }
 
-// JSONMarker is a moment in a window: a skill load (Name is the skill) or a compaction.
+// JSONMarker is a moment in a window: a skill use (Name is the skill, Method how it was used, as
+// livy.pr/1's skills say it) or a compaction.
 type JSONMarker struct {
-	Kind  string    `json:"kind"`
-	At    time.Time `json:"ts"`
-	Agent string    `json:"agent"`
-	Name  string    `json:"name"`
+	Kind   string    `json:"kind"`
+	At     time.Time `json:"ts"`
+	Agent  string    `json:"agent"`
+	Name   string    `json:"name"`
+	Method string    `json:"method"`
 }
 
 // calls is the usage.api_call lines a model span joins to, and every call's cache verdict.
@@ -223,21 +224,21 @@ func traceKindName(s Span) (kind, name string) {
 	return traceTool, name
 }
 
-// markersOf is every session's skill loads and compactions, oldest first.
+// markersOf is every session's skill uses (each once) and compactions, oldest first.
 func markersOf(events []why.Event) map[string][]JSONMarker {
 	out := map[string][]JSONMarker{}
-	for _, e := range events {
-		kind := ""
-		switch {
-		case e.Event == eventSkillLoaded:
-			kind = markerSkill
-		case e.Event == eventInteraction && e.Kind == kindCompacted:
-			kind = markerCompaction
-		default:
-			continue
-		}
+	add := func(e why.Event, m JSONMarker) {
 		if at, ok := instant(e.TS); ok {
-			out[e.SessionID] = append(out[e.SessionID], JSONMarker{Kind: kind, At: at.UTC(), Agent: cmp.Or(e.AgentID, mainAgent), Name: e.Skill})
+			m.At, m.Agent = at.UTC(), cmp.Or(e.AgentID, mainAgent)
+			out[e.SessionID] = append(out[e.SessionID], m)
+		}
+	}
+	for _, e := range why.SkillLoads(events) {
+		add(e, JSONMarker{Kind: markerSkill, Name: e.Skill, Method: why.SkillMethod(e.Trigger)})
+	}
+	for _, e := range events {
+		if e.Event == eventInteraction && e.Kind == kindCompacted {
+			add(e, JSONMarker{Kind: markerCompaction})
 		}
 	}
 	for _, ms := range out {
