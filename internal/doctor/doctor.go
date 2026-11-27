@@ -130,6 +130,7 @@ func Check(ctx context.Context, sinkFor func() (emit.Sink, error)) Report {
 	}
 	checkDenylist(&r)
 	checkPrompts(&r, dir)
+	checkTranscriptRetention(&r)
 	checkOutsideRepo(&r, dir)
 
 	r.OK = true

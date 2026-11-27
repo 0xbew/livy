@@ -4,6 +4,7 @@ package claudecode
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -298,4 +299,138 @@ func skillCall(cwd, id, tool string, input map[string]any, dir string) []map[str
 		out = append(out, meta)
 	}
 	return out
+}
+
+// TestSkillListingIsRecordedWithoutItsText guards the skills a session had in context being lost:
+// Claude Code lists them in the transcript (names, digests and every description) and deletes the
+// transcript after cleanupPeriodDays. Each row is a skill_listing record as Claude Code writes it.
+// The line carries the names and digests only, never a description. A session Claude Code started
+// outside every in-scope repo (the work Mac's shape) that then works in one through `git -C` is
+// placed by its next call there, read in the same pass or a later one; one with no in-scope call
+// leaves nothing. A transcript an older Livy already read past, or one whose outside listing a Livy
+// that placed listings by their own folder alone dropped, is read again for its listings alone, so
+// history still on disk is recovered on upgrade without writing a call twice.
+func TestSkillListingIsRecordedWithoutItsText(t *testing.T) {
+	const description = "Deploys the app to staging"
+	listing := func(cwd string) map[string]any {
+		return map[string]any{"type": "attachment", "uuid": "0b1c-listing-1", "cwd": cwd, "gitBranch": "main",
+			"sessionId": "s1", "version": "2.1.0", "timestamp": "2026-11-01T10:00:00.500Z",
+			"attachment": map[string]any{"type": "skill_listing", "isInitial": true, "skillCount": 3,
+				"names":   []any{"deploy", "anthropic-skills:docx", "someplugin:triage"},
+				"digests": []any{"3a15b287fc004051", "f338a7972c1cd0d0", "41e85020cf4accd2"},
+				"content": "- deploy: " + description + "\n- anthropic-skills:docx: Word files\n- someplugin:triage: x"}}
+	}
+	want := "deploy=3a15b287fc004051 anthropic-skills:docx=f338a7972c1cd0d0 " +
+		fmt.Sprintf("%x:triage=41e85020cf4accd2", sha256.Sum256([]byte("someplugin")))
+	for name, tc := range map[string]struct {
+		// outside starts the session outside every in-scope repo; its later call names the repo
+		// through `git -C` unless noRepoCall. grown runs a first pass while the file may still
+		// grow, which leaves that call (the last message) to the next pass.
+		outside, noRepoCall, grown bool
+		// olderLivy re-reads after a Livy that read no listings; placedByFolder after one whose
+		// listing offsets reached the end placing listings by their own folder alone.
+		olderLivy, placedByFolder bool
+		want                      string
+	}{
+		"a listing in the repo": {want: want},
+		"a listing outside every in-scope repo, placed by the session's next call in the repo": {outside: true, want: want},
+		"a listing outside, the session's next call read in a later pass":                      {outside: true, grown: true, want: want},
+		"a listing in a session with no in-scope call":                                         {outside: true, noRepoCall: true},
+		"a transcript an older Livy already read past":                                         {olderLivy: true, want: want},
+		"an outside listing a Livy placing by folder alone left behind":                        {outside: true, placedByFolder: true, want: want},
+	} {
+		t.Run(name, func(t *testing.T) {
+			repo, root, data := setup(t)
+			cwd := repo
+			if tc.outside {
+				cwd = t.TempDir()
+			}
+			next := assistant(cwd, "m-2", 3, "2026-11-01T10:00:01.000Z")
+			if tc.outside && !tc.noRepoCall {
+				next["message"].(map[string]any)["content"] = []any{map[string]any{"type": "tool_use", "id": "toolu_g",
+					"name": "Bash", "input": map[string]any{"command": "git -C " + repo + " status"}}}
+			}
+			writeLines(t, filepath.Join(root, "-p", "s1.jsonl"), assistant(cwd, "m-1", 3, "2026-11-01T10:00:00.000Z"),
+				listing(cwd), next)
+			settled := time.Now().Add(time.Hour)
+			if tc.grown {
+				run(t, root, data, time.Now())
+			}
+			run(t, root, data, settled)
+			switch {
+			case tc.olderLivy:
+				forgetListings(t, data)
+				run(t, root, data, settled)
+			case tc.placedByFolder:
+				listingsReadByFolder(t, data)
+				run(t, root, data, settled)
+			}
+			var got []string
+			calls := 0
+			for _, l := range ledgerLines(t, data) {
+				if strings.Contains(fmt.Sprint(l), description) {
+					t.Errorf("a ledger line holds a skill's description: %v", l)
+				}
+				switch l["event"] {
+				case "usage.api_call":
+					calls++
+				case "skills.listed":
+					if l["repo"] != "acme/app" || l["listing_initial"] != true || l["session_id"] != "s1" {
+						t.Errorf("skills.listed line %v, want repo acme/app, initial, session s1", l)
+					}
+					for _, s := range l["listed_skills"].([]any) {
+						m := s.(map[string]any)
+						got = append(got, fmt.Sprintf("%v=%v", m["skill"], m["digest"]))
+					}
+				}
+			}
+			if strings.Join(got, " ") != tc.want {
+				t.Errorf("listed skills %q, want %q", strings.Join(got, " "), tc.want)
+			}
+			if (tc.olderLivy || tc.placedByFolder) && calls != 0 {
+				t.Errorf("re-reading for listings wrote %d call line(s) again, want none", calls)
+			}
+		})
+	}
+}
+
+// forgetListings puts the data folder where an older Livy left it: every transcript read to its
+// end, but no listing ever read, and no ledger line yet.
+func forgetListings(t *testing.T, data string) {
+	t.Helper()
+	rewriteState(t, data, func(state map[string]any) { delete(state, listingOffsets) })
+}
+
+// listingsReadByFolder puts the data folder where a Livy that placed listings by their own folder
+// alone left it: every transcript's listings read to its end under the key it used, an outside
+// listing dropped, and no ledger line yet.
+func listingsReadByFolder(t *testing.T, data string) {
+	t.Helper()
+	rewriteState(t, data, func(state map[string]any) {
+		delete(state, listingOffsets)
+		state[oldListingOffsets] = state["files"]
+	})
+}
+
+// rewriteState changes the extractor's state with edit and removes the ledger and the log of
+// lines written.
+func rewriteState(t *testing.T, data string, edit func(map[string]any)) {
+	t.Helper()
+	path := filepath.Join(data, stateName)
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state map[string]any
+	if err := json.Unmarshal(raw, &state); err != nil {
+		t.Fatal(err)
+	}
+	edit(state)
+	out, _ := json.Marshal(state)
+	for _, err := range []error{os.WriteFile(path, out, 0o600), os.Remove(filepath.Join(data, "ledger.jsonl")),
+		os.Remove(filepath.Join(data, "extract-written.log"))} {
+		if err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+	}
 }

@@ -42,7 +42,8 @@
     "commit.recorded",
     "commit.rewritten",
     "prompt.revealed",
-    "skill.loaded"
+    "skill.loaded",
+    "skills.listed"
    ]
   },
   "repo": {
@@ -527,6 +528,34 @@
     "injected-content",
     "disk-after-load"
    ]
+  },
+  "listing_id": {
+   "type": "string"
+  },
+  "listing_initial": {
+   "type": "boolean"
+  },
+  "skill_count": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "listed_skills": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "skill"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "skill": {
+      "type": "string"
+     },
+     "digest": {
+      "type": "string"
+     }
+    }
+   }
   }
  }
 }

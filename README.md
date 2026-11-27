@@ -51,6 +51,18 @@ what a fast judgment model would decide about the agent's next move.
   skill instead of calling it. A use is placed by the call's folder or the folder it named, else by
   the skill's folder in an in-scope repo, else by the same agent's next call (waiting for it while
   the transcript may still grow); with none it is out of scope and leaves nothing. Readers keep one line per use (the hook's, when both wrote one).
+- **Skills in context:** `skills.listed` for each skill listing Claude Code writes into a transcript:
+  the skills it offered the model as available, used or not, at a session's start
+  (`listing_initial` true) and when more became available later (an update, naming only the new
+  ones). It carries `listed_skills` (each `skill`, named as a Skill call's is, and Claude Code's
+  `digest` for it when the transcript has one), `skill_count`, `listing_id`, the session and agent.
+  Never a skill's description, which the listing also holds. Placed by the record's folder, as a
+  call is, else by the same agent's next call in an in-scope repo, as a skill use is (waiting for
+  it while the transcript may still grow): one line per listing, in the repo of that call, and a
+  pull request joins listings by session. With none it leaves nothing. Each transcript is read for its listings from its first byte once, so an upgrade
+  recovers the listings of every transcript still on disk at its next extraction; Claude Code
+  deletes transcripts after `cleanupPeriodDays` (30 days unless set), and `livy doctor` warns
+  below 60.
 - **Never records** prompt or reply text, tool inputs or outputs, shell commands, the
   working folder, transcript paths, or a PR number read from `gh pr create` output.
   (Prompt text is kept only in the local vault below, never in the ledger, and never sent from it.)
@@ -404,6 +416,10 @@ livy reindex                                                     # build or rebu
 `skill.loaded` line inside a commit's window: `ts`, `session_id`, `agent_id`, `skill`, `scope`,
 `trigger`, `sha256`, `tree_sha256`, the `commits` whose windows hold it, `method`: how the skill
 was used, `skill_tool`, `read` or `slash`, and `source`: `hook` or `transcript`; one entry per use),
+`skills_in_context` (the skills the commits' sessions had listed by their windows' end: `sessions`,
+how many sessions the windows hold, `listed`, how many of them have a listing, and `skills[]`, each
+`skill` with the number of `sessions` that listed it, `used` when a `skills[]` entry used it, and
+the listed `digest` of a used one; a skill used but never listed has `sessions` 0),
 and `source`. It reads
 only the lines the commits need from Livy's local index, so its cost follows the pull request,
 not the machine's history; the answer is the one `livy why` and `livy profile` give, except that

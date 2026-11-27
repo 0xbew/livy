@@ -81,6 +81,14 @@ type Event struct {
 	TreeSHA256 string `json:"tree_sha256"`
 	// A call.detail line's stop reason: "end_turn" when the model handed back to the human.
 	StopReason string `json:"stop_reason"`
+	// A skills.listed line's skills: those Claude Code listed to the model as available.
+	ListedSkills []ListedSkill `json:"listed_skills"`
+}
+
+// ListedSkill is one skill a skills.listed line names, with its digest ("" when none was written).
+type ListedSkill struct {
+	Skill  string `json:"skill"`
+	Digest string `json:"digest"`
 }
 
 // Report is what why says about one commit.

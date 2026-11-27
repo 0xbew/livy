@@ -176,11 +176,15 @@ type drift struct {
 }
 
 type parsed struct {
-	messages        []kept
-	prLinks         []map[string]any
-	interactions    []interaction
-	details         []*detail
-	outcomes        []*outcomeItem
+	messages     []kept
+	prLinks      []map[string]any
+	interactions []interaction
+	details      []*detail
+	outcomes     []*outcomeItem
+	listings     []*listing
+	// earlier are the calls between where listings and usage start, kept only to place a listing.
+	earlier         []kept
+	listingCarry    []any
 	nextOffset      int64
 	assistant       int
 	usable          int
@@ -678,14 +682,21 @@ func cwdOf(m map[string]any) (string, bool) {
 	return s, ok
 }
 
-// readTranscript parses one transcript from the smallest of four family offsets to its last
+// readFrom is where each family starts in a transcript, with what the last pass left for the
+// families that carry state across a cut.
+type readFrom struct {
+	usage, interactions, details, outcomes, listings int64
+	interactionCarry, detailCarry, outcomeCarry      any
+	listingCarry                                     any
+}
+
+// readTranscript parses one transcript from the smallest of its family offsets to its last
 // complete line, or to the first record it does not recognise. Each family takes only lines
 // at or past its own offset; context (where the human is, whether the last call failed, the
 // prompt in effect, which tool each pending call was) is tracked across every line read.
-func (rd *reader) readTranscript(path string, start int64, settled bool, interactionStart int64, carry any,
-	detailStart int64, detailCarry any, outcomeStart int64, outcomeCarryIn any) *parsed {
-	s := rd.newScan(start, interactionStart, detailStart, outcomeStart)
-	s.loadCarries(carry, detailCarry, outcomeCarryIn)
+func (rd *reader) readTranscript(path string, settled bool, from readFrom) *parsed {
+	s := rd.newScan(from)
+	s.loadCarries(from.interactionCarry, from.detailCarry, from.outcomeCarry, from.listingCarry)
 	if err := s.readLines(path); err != nil {
 		s.res.readError = true
 		return s.res

@@ -44,8 +44,16 @@ type transcriptScan struct {
 	rd                                                 *reader
 	res                                                *parsed
 	start, interactionStart, detailStart, outcomeStart int64
-	offset                                             int64
-	offsets                                            []int64
+	// listingStart is where skill listings are read from: its own offset, so a transcript an
+	// older Livy read to its end is read again for its listings alone.
+	listingStart int64
+	listings     []listingAt
+	// earlierBest are the calls read before the usage offset but at or past the listings offset,
+	// by message id, kept only to place a listing: a transcript read again for its listings alone.
+	earlierBest  map[string]*kept
+	earlierOrder []string
+	offset       int64
+	offsets      []int64
 
 	// outcomes
 	carriedNames    map[string]string
@@ -83,15 +91,16 @@ type transcriptScan struct {
 	promptBefore               []string
 }
 
-func (rd *reader) newScan(start, interactionStart, detailStart, outcomeStart int64) *transcriptScan {
-	begin := min(start, interactionStart, detailStart, outcomeStart)
+func (rd *reader) newScan(from readFrom) *transcriptScan {
+	begin := min(from.usage, from.interactions, from.details, from.outcomes, from.listings)
 	return &transcriptScan{
 		rd:               rd,
 		res:              &parsed{nextOffset: begin},
-		start:            start,
-		interactionStart: interactionStart,
-		detailStart:      detailStart,
-		outcomeStart:     outcomeStart,
+		start:            from.usage,
+		interactionStart: from.interactions,
+		detailStart:      from.details,
+		outcomeStart:     from.outcomes,
+		listingStart:     from.listings,
 		offset:           begin,
 		carriedNames:     map[string]string{},
 		carriedWhere:     map[string][2]string{},
@@ -103,12 +112,16 @@ func (rd *reader) newScan(start, interactionStart, detailStart, outcomeStart int
 		skillDirs:        map[string]string{},
 		spans:            map[string][2]int{},
 		best:             map[string]*kept{},
+		earlierBest:      map[string]*kept{},
 		details:          map[string]*detail{},
 	}
 }
 
 // loadCarries takes what the last pass left for each family that starts past the file's head.
-func (s *transcriptScan) loadCarries(carry, detailCarry, outcomeCarryIn any) {
+func (s *transcriptScan) loadCarries(carry, detailCarry, outcomeCarryIn, listingCarryIn any) {
+	if s.listingStart > 0 {
+		s.res.listings = waitingListings(listingCarryIn)
+	}
 	if s.outcomeStart > 0 {
 		s.carriedNames, s.carriedWhere, s.elsewhere = s.rd.carried(outcomeCarryIn)
 	}
@@ -246,7 +259,13 @@ func (s *transcriptScan) line(raw []byte) bool {
 		}
 		return true
 	}
+	if kind == "attachment" && lineOffset >= s.listingStart {
+		s.noteListing(rec, index)
+	}
 	s.noteAssistant(rec, kind, index, inUsage, inDetails)
+	if kind == "assistant" && !inUsage && lineOffset >= s.listingStart && usable(rec) {
+		s.rd.keep(s.earlierBest, &s.earlierOrder, rec)
+	}
 	return true
 }
 
@@ -457,6 +476,8 @@ func (s *transcriptScan) finish(settled bool) {
 	s.res.usable = countBefore(s.usableIdx, c)
 	s.keepMessages(c)
 	s.keepLinksAndInteractions(c)
+	s.keepListings(c)
+	s.keepEarlier()
 	s.res.carry = s.interactionCarryAt(c, end)
 	s.keepDetails(c)
 	s.res.detailCarry = s.detailCarryAt(c, end)

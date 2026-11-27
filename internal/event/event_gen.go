@@ -48,6 +48,9 @@ type Event struct {
 	JevModelMismatch           *bool               // jev_model_mismatch
 	Kind                       *string             // kind
 	LatencyMs                  *int64              // latency_ms
+	ListedSkills               *[]ListedSkillsItem // listed_skills
+	ListingId                  *string             // listing_id
+	ListingInitial             *bool               // listing_initial
 	MessageId                  *string             // message_id
 	Model                      *string             // model
 	NotObservable              *[]string           // not_observable
@@ -91,6 +94,7 @@ type Event struct {
 	SessionId                  *string             // session_id
 	Sha256                     *string             // sha256
 	Skill                      *string             // skill
+	SkillCount                 *int64              // skill_count
 	SlashCommand               *bool               // slash_command
 	Source                     *string             // source
 	SpawnedAgentId             *string             // spawned_agent_id
@@ -207,6 +211,12 @@ func (e *Event) set(key string, v any) (err error) {
 		e.Kind, err = asString(v)
 	case "latency_ms":
 		e.LatencyMs, err = asInt(v)
+	case "listed_skills":
+		e.ListedSkills, err = asListedSkillsItems(v)
+	case "listing_id":
+		e.ListingId, err = asString(v)
+	case "listing_initial":
+		e.ListingInitial, err = asBool(v)
 	case "message_id":
 		e.MessageId, err = asString(v)
 	case "model":
@@ -293,6 +303,8 @@ func (e *Event) set(key string, v any) (err error) {
 		e.Sha256, err = asString(v)
 	case "skill":
 		e.Skill, err = asString(v)
+	case "skill_count":
+		e.SkillCount, err = asInt(v)
 	case "slash_command":
 		e.SlashCommand, err = asBool(v)
 	case "source":
@@ -479,6 +491,15 @@ func (e Event) fields() map[string]any {
 	if e.LatencyMs != nil {
 		m["latency_ms"] = *e.LatencyMs
 	}
+	if e.ListedSkills != nil {
+		m["listed_skills"] = encodeListedSkillsItems(*e.ListedSkills)
+	}
+	if e.ListingId != nil {
+		m["listing_id"] = *e.ListingId
+	}
+	if e.ListingInitial != nil {
+		m["listing_initial"] = *e.ListingInitial
+	}
 	if e.MessageId != nil {
 		m["message_id"] = *e.MessageId
 	}
@@ -607,6 +628,9 @@ func (e Event) fields() map[string]any {
 	}
 	if e.Skill != nil {
 		m["skill"] = *e.Skill
+	}
+	if e.SkillCount != nil {
+		m["skill_count"] = *e.SkillCount
 	}
 	if e.SlashCommand != nil {
 		m["slash_command"] = *e.SlashCommand
@@ -742,6 +766,63 @@ func encodeDoctorChecksItems(list []DoctorChecksItem) []any {
 		m := map[string]any{}
 		m["check"] = it.Check
 		m["status"] = it.Status
+		out[i] = m
+	}
+	return out
+}
+
+// ListedSkillsItem is one element of the array; an optional property is a pointer.
+type ListedSkillsItem struct {
+	Digest *string // digest
+	Skill  string  // skill
+}
+
+func asListedSkillsItems(v any) (*[]ListedSkillsItem, error) {
+	list, ok := v.([]any)
+	if !ok {
+		return nil, fmt.Errorf("want an array, got %s", kind(v))
+	}
+	out := make([]ListedSkillsItem, 0, len(list))
+	for i, x := range list {
+		obj, ok := x.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("[%d]: want an object, got %s", i, kind(x))
+		}
+		var it ListedSkillsItem
+		for k, y := range obj {
+			switch k {
+			case "digest":
+				s, err := asString(y)
+				if err != nil {
+					return nil, fmt.Errorf("[%d].digest: %w", i, err)
+				}
+				it.Digest = s
+			case "skill":
+				s, err := asString(y)
+				if err != nil {
+					return nil, fmt.Errorf("[%d].skill: %w", i, err)
+				}
+				it.Skill = *s
+			default:
+				return nil, fmt.Errorf("[%d].%s: not in the schema", i, k)
+			}
+		}
+		if _, ok := obj["skill"]; !ok {
+			return nil, fmt.Errorf("[%d]: required skill missing", i)
+		}
+		out = append(out, it)
+	}
+	return &out, nil
+}
+
+func encodeListedSkillsItems(list []ListedSkillsItem) []any {
+	out := make([]any, len(list))
+	for i, it := range list {
+		m := map[string]any{}
+		if it.Digest != nil {
+			m["digest"] = *it.Digest
+		}
+		m["skill"] = it.Skill
 		out[i] = m
 	}
 	return out

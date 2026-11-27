@@ -60,6 +60,8 @@ type Doc struct {
 	Profile profile.JSONReport `json:"profile"`
 	// Skills are the skill loads inside the commits' session windows, oldest first.
 	Skills []Skill `json:"skills"`
+	// SkillsInContext is which skills the commits' sessions had in context, used or not.
+	SkillsInContext SkillsInContext `json:"skills_in_context"`
 	// Cost is the estimated API cost of the commits' windows at list prices, and their cache use.
 	Cost Cost `json:"cost"`
 	// EmptyWindows are the commits' session windows with no model call in the ledger, each with why,
@@ -219,6 +221,7 @@ func assemble(o options, facts []why.Commit, ld loaded) Doc {
 	doc.Profile.Read.Summary = ld.read.Summary
 	doc.Profile.Read.Unread = append(append([]string{}, ld.read.Unread...), ld.spanRd.Unread...)
 	doc.Skills = skillsIn(explained, ld.events)
+	doc.SkillsInContext = skillsInContext(explained, ld.events, doc.Skills)
 	doc.Cost = costOf(explained, ld.events)
 	return doc
 }

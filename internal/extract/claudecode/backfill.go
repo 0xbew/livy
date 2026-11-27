@@ -132,7 +132,7 @@ func (b *usageBackfill) read(path string) (*parsed, bool) {
 	}
 	// Usage from byte 0; every other family starts at the end, so none of them is collected.
 	size := st.Size()
-	p := b.rd.readTranscript(path, 0, settled, size, nil, size, nil, size, nil)
+	p := b.rd.readTranscript(path, settled, readFrom{interactions: size, details: size, outcomes: size, listings: size})
 	if p.readError {
 		b.stats["unreadable_files"]++
 		return nil, false

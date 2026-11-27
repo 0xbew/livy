@@ -38,7 +38,7 @@ const (
 // Families with their own offset map and carry map in state. `held` is Livy's own: where
 // each file is held by a record it does not recognise, so the error is written once.
 var families = []string{"files", "interactions", "interaction_carry", "details", "detail_carry", "outcomes",
-	"outcome_carry", "agents", "held"}
+	"outcome_carry", "agents", "held", listingOffsets, listingCarry}
 
 // Stats are the run's counts, printed as JSON on stdout.
 type Stats map[string]int
@@ -202,6 +202,7 @@ func loadState(path string, say func(string)) map[string]any {
 		}
 	}
 	s["pr_links"] = kept
+	delete(s, oldListingOffsets)
 	for _, f := range families {
 		extract.SubMap(s, f)
 	}
@@ -236,7 +237,7 @@ type extractPass struct {
 	scope        *extract.Scope
 	rd           *reader
 
-	seenMessages, seenInteractions, seenDetails, seenOutcomes, seenLinks, seenSkills map[string]bool
+	seenMessages, seenInteractions, seenDetails, seenOutcomes, seenLinks, seenSkills, seenListings map[string]bool
 
 	unreadable int
 	dirty      int
@@ -277,6 +278,7 @@ func newExtractPass(o Options) (*extractPass, bool) {
 		seenOutcomes:     map[string]bool{},
 		seenLinks:        map[string]bool{},
 		seenSkills:       map[string]bool{},
+		seenListings:     map[string]bool{},
 	}
 	if o.DryRun {
 		ps.state = loadState("", func(string) {})
@@ -376,16 +378,17 @@ func (ps *extractPass) readFile(tf file) *halt {
 		gen[f] = extract.SubMap(ps.state[f].(map[string]any), key)
 	}
 	off := func(f string) int64 { v, _ := extract.Offset(gen[f][fp]); return v }
-	start, istart, dstart, ostart := off("files"), off("interactions"), off("details"), off("outcomes")
-	if start >= size && istart >= size && dstart >= size && ostart >= size {
+	from := readFrom{usage: off("files"), interactions: off("interactions"), details: off("details"),
+		outcomes: off("outcomes"), listings: off(listingOffsets), interactionCarry: gen["interaction_carry"][fp],
+		detailCarry: gen["detail_carry"][fp], outcomeCarry: gen["outcome_carry"][fp], listingCarry: gen[listingCarry][fp]}
+	if min(from.usage, from.interactions, from.details, from.outcomes, from.listings) >= size {
 		return nil
 	}
 	ps.stats["files_read"]++
 	timeoutsBefore := ps.scope.TimeoutReads
 	before := maps.Clone(ps.stats)
 	settled := ps.o.Now.Sub(st.ModTime()) >= settleSeconds*time.Second
-	p := ps.rd.readTranscript(tf.path, start, settled, istart, gen["interaction_carry"][fp], dstart,
-		gen["detail_carry"][fp], ostart, gen["outcome_carry"][fp])
+	p := ps.rd.readTranscript(tf.path, settled, from)
 	if p.readError {
 		ps.stats["unreadable_files"]++
 		return nil
@@ -399,6 +402,7 @@ func (ps *extractPass) readFile(tf file) *halt {
 	ps.detailLines(p, fl)
 	ps.outcomeLines(p, fl)
 	ps.skillLines(p, fl, settled)
+	ps.listingLines(p, fl, settled)
 	if ps.scope.TimeoutReads != timeoutsBefore {
 		ps.holdForScope(before, fl)
 		return nil
@@ -472,6 +476,10 @@ func (ps *extractPass) advance(gen map[string]map[string]any, fp string, p *pars
 			gen[fam.offsets][fp] = reached
 			gen[fam.carries][fp] = fam.carry
 		}
+	}
+	if prior, ok := extract.Offset(gen[listingOffsets][fp]); !ok || reached >= prior {
+		gen[listingOffsets][fp] = reached
+		gen[listingCarry][fp] = p.listingCarry
 	}
 	if p.drift == nil {
 		delete(gen["held"], fp)
@@ -676,6 +684,9 @@ func report(stats Stats, scope *extract.Scope, w *extract.Writer, problems []str
 	say(stats["detail_bad_names"], "%d name(s) in call details (tool, skill, subagent type, error, stop reason, effort) were missing or not a plain name, and were left out")
 	say(stats["details_incomplete"], "%d call detail(s) have a tool list that could not be read in full and are marked tools_incomplete — the transcript format may have changed")
 	say(stats["outcomes_unrecognised"], "%d guarded tool call(s) failed with a result this extractor does not recognise as a run or a refusal — the harness may have a new message; they are recorded as tool.outcome `unknown`, never as `ran`")
+	say(stats["listings_unreadable"], "%d skill listing(s) had names, digests or an id of a shape this extractor does not read, and were left out — the transcript format may have changed")
+	say(stats["listing_bad_names"], "%d name(s) in skill listings were not a skill name, and were left out")
+	say(stats["listing_unparseable_ts"], "%d skill listing(s) dropped for an unparseable timestamp")
 	say(stats["unscoped_outcomes"], "%d tool result(s) had no working directory to scope them by and were dropped — not known to be out of scope, just unknowable")
 	say(stats["outcome_unparseable_ts"], "%d tool outcome(s) dropped for an unparseable timestamp")
 	if stats["outcome_unnamed"] > 0 || stats["outcome_bad_ids"] > 0 {
